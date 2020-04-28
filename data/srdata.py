@@ -24,7 +24,10 @@ class SRData(data.Dataset):
         self.data_types = args.data_type
 
         self.idx_scale = 0
-        
+
+        if self.args.ext=='npz' and not self.train:
+            args.dir_data = args.dir_demo
+
         self._set_filesystem(args.dir_data)
         if args.ext.find('img') < 0:
             path_bin = os.path.join(self.apath, 'bin')
