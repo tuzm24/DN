@@ -1,6 +1,6 @@
 import argparse
 import template
-
+from help_func.CompArea import PictureFormat
 parser = argparse.ArgumentParser(description='EDSR and MDSR')
 
 parser.add_argument('--debug', action='store_true',
@@ -9,7 +9,7 @@ parser.add_argument('--template', default='.',
                     help='You can set various templates in option.py')
 
 # Hardware specifications
-parser.add_argument('--n_threads', type=int, default=6,
+parser.add_argument('--n_threads', type=int, default=0,
                     help='number of threads for data loading')
 parser.add_argument('--cpu', action='store_true',
                     help='use cpu only')
@@ -19,21 +19,21 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
-parser.add_argument('--dir_data', type=str, default='../../../dataset',
+parser.add_argument('--dir_data', type=str, default='./Dataset/BY_PIC/Training',
                     help='dataset directory')
-parser.add_argument('--dir_demo', type=str, default='../test',
+parser.add_argument('--dir_demo', type=str, default='./Dataset/BY_PIC/Validation',
                     help='demo image directory')
-parser.add_argument('--data_train', type=str, default='DIV2K',
+parser.add_argument('--data_train', type=str, default='YUVData',
                     help='train dataset name')
-parser.add_argument('--data_test', type=str, default='DIV2K',
+parser.add_argument('--data_test', type=str, default='YUVData',
                     help='test dataset name')
 parser.add_argument('--data_range', type=str, default='1-800/801-810',
                     help='train/test data range')
-parser.add_argument('--ext', type=str, default='sep',
+parser.add_argument('--ext', type=str, default='npz',
                     help='dataset file extension')
-parser.add_argument('--scale', type=str, default='4',
+parser.add_argument('--scale', type=str, default='1',
                     help='super resolution scale')
-parser.add_argument('--patch_size', type=int, default=192,
+parser.add_argument('--patch_size', type=int, default=32 ,
                     help='output patch size')
 parser.add_argument('--rgb_range', type=int, default=255,
                     help='maximum value of RGB')
@@ -44,8 +44,12 @@ parser.add_argument('--chop', action='store_true',
 parser.add_argument('--no_augment', action='store_true',
                     help='do not use data augmentation')
 
+parser.add_argument('--data_type', type=str, default=PictureFormat.INDEX_DIC[PictureFormat.UNFILTEREDRECON]+
+                                                     '+'+PictureFormat.INDEX_DIC[PictureFormat.RECONSTRUCTION],
+                    help='get data type')
+
 # Model specifications
-parser.add_argument('--model', default='EDSR',
+parser.add_argument('--model', default='rdn',
                     help='model name')
 
 parser.add_argument('--act', type=str, default='relu',
@@ -89,7 +93,7 @@ parser.add_argument('--test_every', type=int, default=1000,
                     help='do test per every N batches')
 parser.add_argument('--epochs', type=int, default=300,
                     help='number of epochs to train')
-parser.add_argument('--batch_size', type=int, default=16,
+parser.add_argument('--batch_size', type=int, default=2,
                     help='input batch size for training')
 parser.add_argument('--split_batch', type=int, default=1,
                     help='split the batch into smaller chunks')
@@ -149,6 +153,8 @@ template.set_template(args)
 args.scale = list(map(lambda x: int(x), args.scale.split('+')))
 args.data_train = args.data_train.split('+')
 args.data_test = args.data_test.split('+')
+args.data_type = args.data_type.split('+')
+
 
 if args.epochs == 0:
     args.epochs = 1e8

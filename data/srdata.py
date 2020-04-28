@@ -20,6 +20,9 @@ class SRData(data.Dataset):
         self.benchmark = benchmark
         self.input_large = (args.model == 'VDSR')
         self.scale = args.scale
+
+        self.data_types = args.data_type
+
         self.idx_scale = 0
         
         self._set_filesystem(args.dir_data)
@@ -29,6 +32,8 @@ class SRData(data.Dataset):
 
         list_hr, list_lr = self._scan()
         if args.ext.find('img') >= 0 or benchmark:
+            self.images_hr, self.images_lr = list_hr, list_lr
+        elif args.ext.find('npz')>=0:
             self.images_hr, self.images_lr = list_hr, list_lr
         elif args.ext.find('sep') >= 0:
             os.makedirs(
@@ -69,7 +74,7 @@ class SRData(data.Dataset):
         names_hr = sorted(
             glob.glob(os.path.join(self.dir_hr, '*' + self.ext[0]))
         )
-        names_lr = [[] for _ in self.scale]
+        names_lr = [[] for _ in self.data_types]
         for f in names_hr:
             filename, _ = os.path.splitext(os.path.basename(f))
             for si, s in enumerate(self.scale):
@@ -115,6 +120,16 @@ class SRData(data.Dataset):
         else:
             return idx
 
+    @staticmethod
+    def read_npz_file(f):
+        def UpSamplingChroma(UVPic):
+            return UVPic.repeat(2, axis=0).repeat(2, axis=1)
+        f = np.load(f)
+        return np.stack((f['Y'], UpSamplingChroma(f['Cb']), UpSamplingChroma(f['Cr'])), axis=2)
+
+
+
+
     def _load_file(self, idx):
         idx = self._get_index(idx)
         f_hr = self.images_hr[idx]
@@ -124,28 +139,31 @@ class SRData(data.Dataset):
         if self.args.ext == 'img' or self.benchmark:
             hr = imageio.imread(f_hr)
             lr = imageio.imread(f_lr)
+        elif self.args.ext.find('npz') >= 0:
+            hr = self.read_npz_file(f_hr)
+            lr = []
+            for flr in self.images_lr:
+                lr.append(self.read_npz_file(flr[idx]))
+            # lr = self.read_npz_file(f_lr)
         elif self.args.ext.find('sep') >= 0:
             with open(f_hr, 'rb') as _f:
                 hr = pickle.load(_f)
             with open(f_lr, 'rb') as _f:
                 lr = pickle.load(_f)
-
         return lr, hr, filename
 
     def get_patch(self, lr, hr):
         scale = self.scale[self.idx_scale]
         if self.train:
-            lr, hr = common.get_patch(
-                lr, hr,
+            hr, lr = common.get_patch(
+                hr, lr,
                 patch_size=self.args.patch_size,
                 scale=scale,
                 multi=(len(self.scale) > 1),
-                input_large=self.input_large
+                input_large=True
             )
-            if not self.args.no_augment: lr, hr = common.augment(lr, hr)
-        else:
-            ih, iw = lr.shape[:2]
-            hr = hr[0:ih * scale, 0:iw * scale]
+            if self.args.no_augment: lr, hr = common.augment(lr, hr)
+
 
         return lr, hr
 

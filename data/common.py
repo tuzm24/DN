@@ -25,8 +25,8 @@ def get_patch(*args, patch_size=96, scale=2, multi=False, input_large=False):
         tx, ty = ix, iy
 
     ret = [
-        args[0][iy:iy + ip, ix:ix + ip, :],
-        *[a[ty:ty + tp, tx:tx + tp, :] for a in args[1:]]
+        args[0][ty:ty + tp, tx:tx + tp, :],
+        [a[iy:iy + ip, ix:ix + ip, :] for a in args[1]]
     ]
 
     return ret
@@ -51,6 +51,16 @@ def np2Tensor(*args, rgb_range=255):
         np_transpose = np.ascontiguousarray(img.transpose((2, 0, 1)))
         tensor = torch.from_numpy(np_transpose).float()
         tensor.mul_(rgb_range / 255)
+
+        return tensor
+
+    return [_np2Tensor(a) for a in args]
+
+def np2Tensor2(args, rgb_range=1):
+    def _np2Tensor(img):
+        np_transpose = np.ascontiguousarray(img.transpose((2, 0, 1)))
+        tensor = torch.from_numpy(np_transpose).float()
+        tensor.mul_(rgb_range / 1023)
 
         return tensor
 

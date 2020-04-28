@@ -72,8 +72,13 @@ class RDN(nn.Module):
             nn.Conv2d(G0, G0, kSize, padding=(kSize-1)//2, stride=1)
         ])
 
+        if r==1:
+            self.UPNet = nn.Sequential(*[
+                nn.Conv2d(G0, args.n_colors, kSize, padding=(kSize-1)//2, stride=1)
+            ])
+
         # Up-sampling net
-        if r == 2 or r == 3:
+        elif r == 2 or r == 3:
             self.UPNet = nn.Sequential(*[
                 nn.Conv2d(G0, G * r * r, kSize, padding=(kSize-1)//2, stride=1),
                 nn.PixelShuffle(r),
@@ -103,3 +108,10 @@ class RDN(nn.Module):
         x += f__1
 
         return self.UPNet(x)
+
+
+if __name__=='__main__':
+    from help_func.my_torchsummary import summary
+    from option import args
+    model = RDN(args)
+    summary(model, (3, 192,192))

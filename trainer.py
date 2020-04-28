@@ -45,7 +45,7 @@ class Trainer():
             timer_model.tic()
 
             self.optimizer.zero_grad()
-            sr = self.model(lr, 0)
+            sr = self.model(lr[0], 0)
             loss = self.loss(sr, hr)
             loss.backward()
             if self.args.gclip > 0:
@@ -134,7 +134,7 @@ class Trainer():
             if self.args.precision == 'half': tensor = tensor.half()
             return tensor.to(device)
 
-        return [_prepare(a) for a in args]
+        return [_prepare(a) if not isinstance(a, list) else self.prepare(*a) for a in args]
 
     def terminate(self):
         if self.args.test_only:
