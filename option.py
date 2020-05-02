@@ -35,7 +35,7 @@ parser.add_argument('--scale', type=str, default='1',
                     help='super resolution scale')
 parser.add_argument('--patch_size', type=int, default=192,
                     help='output patch size')
-parser.add_argument('--rgb_range', type=int, default=255,
+parser.add_argument('--rgb_range', type=int, default=1023,
                     help='maximum value of RGB')
 parser.add_argument('--n_colors', type=int, default=3,
                     help='number of color channels to use')
@@ -49,7 +49,7 @@ parser.add_argument('--data_type', type=str, default=PictureFormat.INDEX_DIC[Pic
                     help='get data type')
 
 # Model specifications
-parser.add_argument('--model', default='rdn',
+parser.add_argument('--model', default='rdn_down_up',
                     help='model name')
 
 parser.add_argument('--act', type=str, default='relu',

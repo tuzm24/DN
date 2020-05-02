@@ -54,7 +54,7 @@ class checkpoint():
         if not args.load:
             if not args.save:
                 args.save = now
-            self.dir = os.path.join('experiment', args.save)
+            self.dir = os.path.join('experiment', args.model)
         else:
             self.dir = os.path.join('experiment', args.load)
             if os.path.exists(self.dir):
@@ -164,7 +164,7 @@ class checkpoint():
 
 def quantize(img, rgb_range):
     pixel_range = rgb_range
-    return img.mul(pixel_range).clamp(0, 1023).round().div(pixel_range)
+    return img.mul(pixel_range).clamp(0, pixel_range).round().div(pixel_range)
 
 
 
