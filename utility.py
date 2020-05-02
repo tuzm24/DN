@@ -6,6 +6,7 @@ from multiprocessing import Process
 from multiprocessing import Queue
 
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -15,6 +16,7 @@ import imageio
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
+
 
 class timer():
     def __init__(self):
@@ -40,6 +42,7 @@ class timer():
 
     def reset(self):
         self.acc = 0
+
 
 class checkpoint():
     def __init__(self, args):
@@ -69,7 +72,7 @@ class checkpoint():
         for d in args.data_test:
             os.makedirs(self.get_path('results-{}'.format(d)), exist_ok=True)
 
-        open_type = 'a' if os.path.exists(self.get_path('log.txt'))else 'w'
+        open_type = 'a' if os.path.exists(self.get_path('log.txt')) else 'w'
         self.log_file = open(self.get_path('log.txt'), open_type)
         with open(self.get_path('config.txt'), open_type) as f:
             f.write(now + '\n\n')
@@ -132,12 +135,12 @@ class checkpoint():
                     filename, tensor = queue.get()
                     if filename is None: break
                     imageio.imwrite(filename, tensor.numpy())
-        
+
         self.process = [
             Process(target=bg_target, args=(self.queue,)) \
             for _ in range(self.n_processes)
         ]
-        
+
         for p in self.process: p.start()
 
     def end_background(self):
@@ -158,9 +161,11 @@ class checkpoint():
                 tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
                 self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
 
+
 def quantize(img, rgb_range):
     pixel_range = 255 / rgb_range
     return img.mul(pixel_range).clamp(0, 255).round().div(pixel_range)
+
 
 def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
     if hr.nelement() == 1: return 0
@@ -179,6 +184,7 @@ def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
     mse = valid.pow(2).mean()
 
     return -10 * math.log10(mse)
+
 
 def make_optimizer(args, target):
     '''
@@ -230,7 +236,7 @@ def make_optimizer(args, target):
 
         def get_last_epoch(self):
             return self.scheduler.last_epoch
-    
+
     optimizer = CustomOptimizer(trainable, **kwargs_optimizer)
     optimizer._register_scheduler(scheduler_class, **kwargs_scheduler)
     return optimizer
