@@ -49,8 +49,8 @@ class RDN(nn.Module):
     def __init__(self, args):
         super(RDN, self).__init__()
         r = 2
-        G0 = args.G0
-        kSize = args.RDNkSize*2
+        G0 = args.G0*2
+        kSize = args.RDNkSize
 
         # number of RDB blocks, conv layers, out channels
         self.D, C, G = {
@@ -59,8 +59,8 @@ class RDN(nn.Module):
         }[args.RDNconfig]
 
         # Shallow feature extraction net
-        self.SFENet1 = nn.Conv2d(args.n_colors, G0, kSize//2, padding=(kSize - 1) // 2, stride=1)
-        self.SFENet2 = nn.Conv2d(G0, G0, kSize, padding=(kSize - 1) // 2, stride=2)
+        self.SFENet1 = nn.Conv2d(args.n_colors, G0//2, kSize, padding=(kSize - 1) // 2, stride=1)
+        self.SFENet2 = nn.Conv2d(G0//2, G0, kSize, padding=(kSize - 1) // 2, stride=2)
 
         # Redidual dense blocks and dense feature fusion
         self.RDBs = nn.ModuleList()
