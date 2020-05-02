@@ -6,6 +6,7 @@ from multiprocessing import Process
 from multiprocessing import Queue
 
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -15,6 +16,7 @@ import imageio
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
+
 
 class timer():
     def __init__(self):
@@ -41,6 +43,7 @@ class timer():
     def reset(self):
         self.acc = 0
 
+
 class checkpoint():
     def __init__(self, args):
         self.args = args
@@ -51,9 +54,9 @@ class checkpoint():
         if not args.load:
             if not args.save:
                 args.save = now
-            self.dir = os.path.join('..', 'experiment', args.save)
+            self.dir = os.path.join('experiment', args.save)
         else:
-            self.dir = os.path.join('..', 'experiment', args.load)
+            self.dir = os.path.join('experiment', args.load)
             if os.path.exists(self.dir):
                 self.log = torch.load(self.get_path('psnr_log.pt'))
                 print('Continue from epoch {}...'.format(len(self.log)))
@@ -69,7 +72,7 @@ class checkpoint():
         for d in args.data_test:
             os.makedirs(self.get_path('results-{}'.format(d)), exist_ok=True)
 
-        open_type = 'a' if os.path.exists(self.get_path('log.txt'))else 'w'
+        open_type = 'a' if os.path.exists(self.get_path('log.txt')) else 'w'
         self.log_file = open(self.get_path('log.txt'), open_type)
         with open(self.get_path('config.txt'), open_type) as f:
             f.write(now + '\n\n')
@@ -132,12 +135,12 @@ class checkpoint():
                     filename, tensor = queue.get()
                     if filename is None: break
                     imageio.imwrite(filename, tensor.numpy())
-        
+
         self.process = [
             Process(target=bg_target, args=(self.queue,)) \
             for _ in range(self.n_processes)
         ]
-        
+
         for p in self.process: p.start()
 
     def end_background(self):
@@ -158,14 +161,16 @@ class checkpoint():
                 tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
                 self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
 
+
 def quantize(img, rgb_range):
-    pixel_range = 255 / rgb_range
-    return img.mul(pixel_range).clamp(0, 255).round().div(pixel_range)
+    pixel_range = rgb_range
+    return img.mul(pixel_range).clamp(0, 1023).round().div(pixel_range)
+
 
 def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
     if hr.nelement() == 1: return 0
 
-    diff = (sr - hr) / rgb_range
+    diff = (sr - hr)
     if dataset and dataset.dataset.benchmark:
         shave = scale
         if diff.size(1) > 1:
@@ -180,10 +185,37 @@ def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
 
     return -10 * math.log10(mse)
 
+
 def make_optimizer(args, target):
     '''
         make optimizer and scheduler together
     '''
+
+    class LearningRateWarmUP(object):
+        def __init__(self, optimizer, warmup_iteration, target_lr, after_scheduler=None):
+            self.optimizer = optimizer
+            self.warmup_iteration = warmup_iteration
+            self.target_lr = target_lr
+            self.after_scheduler = after_scheduler
+            self.last_epoch = 0
+
+        def warmup_learning_rate(self, cur_iteration):
+            warmup_lr = self.target_lr * float(cur_iteration + 1) / float(self.warmup_iteration)
+            for param_group in self.optimizer.param_groups:
+                param_group['lr'] = warmup_lr
+
+        def step(self):
+            if self.last_epoch < (self.warmup_iteration + 1):
+                self.warmup_learning_rate(self.last_epoch)
+            else:
+                self.after_scheduler.step(self.last_epoch - self.warmup_iteration)
+            self.last_epoch +=1
+
+        def get_lr(self):
+            if self.last_epoch< (self.warmup_iteration + 1):
+                return [self.target_lr * float(self.last_epoch + 1) / float(self.warmup_iteration)]
+            return self.after_scheduler.get_lr()
+
     # optimizer
     trainable = filter(lambda x: x.requires_grad, target.parameters())
     kwargs_optimizer = {'lr': args.lr, 'weight_decay': args.weight_decay}
@@ -202,7 +234,8 @@ def make_optimizer(args, target):
     # scheduler
     milestones = list(map(lambda x: int(x), args.decay.split('-')))
     kwargs_scheduler = {'milestones': milestones, 'gamma': args.gamma}
-    scheduler_class = lrs.MultiStepLR
+
+    # scheduler_class = lrs.MultiStepLR
 
     class CustomOptimizer(optimizer_class):
         def __init__(self, *args, **kwargs):
@@ -230,8 +263,13 @@ def make_optimizer(args, target):
 
         def get_last_epoch(self):
             return self.scheduler.last_epoch
-    
+
     optimizer = CustomOptimizer(trainable, **kwargs_optimizer)
+
+    scheduler_class = LearningRateWarmUP
+    kwargs_scheduler = {'warmup_iteration': 10, 'target_lr': args.lr,
+                        'after_scheduler': torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)}
+
     optimizer._register_scheduler(scheduler_class, **kwargs_scheduler)
     return optimizer
 

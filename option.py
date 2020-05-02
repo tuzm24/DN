@@ -13,7 +13,7 @@ parser.add_argument('--n_threads', type=int, default=10,
                     help='number of threads for data loading')
 parser.add_argument('--cpu', action='store_true',
                     help='use cpu only')
-parser.add_argument('--n_GPUs', type=int, default=1,
+parser.add_argument('--n_GPUs', type=int, default=2,
                     help='number of GPUs')
 parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
@@ -27,13 +27,13 @@ parser.add_argument('--data_train', type=str, default='YUVData',
                     help='train dataset name')
 parser.add_argument('--data_test', type=str, default='YUVData',
                     help='test dataset name')
-parser.add_argument('--data_range', type=str, default='1-800/801-810',
+parser.add_argument('--data_range', type=str, default='1-4000/801-816',
                     help='train/test data range')
 parser.add_argument('--ext', type=str, default='npz',
                     help='dataset file extension')
 parser.add_argument('--scale', type=str, default='1',
                     help='super resolution scale')
-parser.add_argument('--patch_size', type=int, default=32 ,
+parser.add_argument('--patch_size', type=int, default=192,
                     help='output patch size')
 parser.add_argument('--rgb_range', type=int, default=255,
                     help='maximum value of RGB')
