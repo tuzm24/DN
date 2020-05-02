@@ -99,18 +99,18 @@ class RDN(nn.Module):
             raise ValueError("scale must be 2 or 3 or 4.")
 
     def forward(self, x):
-        f__1 = self.SFENet1(x)
-        x = self.SFENet2(f__1)
+        _x = self.SFENet1(x)
+        _x = self.SFENet2(_x)
 
         RDBs_out = []
         for i in range(self.D):
-            x = self.RDBs[i](x)
-            RDBs_out.append(x)
+            _x = self.RDBs[i](_x)
+            RDBs_out.append(_x)
 
-        x = self.GFF(torch.cat(RDBs_out, 1))
+        _x = self.GFF(torch.cat(RDBs_out, 1))
         # x += f__1
 
-        return self.UPNet(x) + x
+        return self.UPNet(_x) + x
 
 
 if __name__ == '__main__':
