@@ -22,6 +22,8 @@ class SRData(data.Dataset):
         self.scale = args.scale
 
         self.data_types = args.data_type
+        if self.train:
+            self.data_types = [self.data_types[0]]
 
         self.idx_scale = 0
 
