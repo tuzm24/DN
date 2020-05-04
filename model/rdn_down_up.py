@@ -118,4 +118,4 @@ if __name__ == '__main__':
     from option import args
 
     model = RDN(args)
-    summary(model, (3, 192, 192))
+    summary(model, (3, 64, 64))
