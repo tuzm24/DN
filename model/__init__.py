@@ -107,12 +107,8 @@ class Model(nn.Module):
         n_GPUs = min(self.n_GPUs, 4)
         b, c, h, w = x.size()
         h_half, w_half = h // 2, w // 2
-        h_shave , w_shave = shave, shave
-        if h%2==1:
-            h_shave +=1
-        if w%2==1:
-            w_shave +=1
-        h_size, w_size = h_half + h_shave, w_half + w_shave
+
+        h_size, w_size = h_half + shave, w_half + shave
 
 
         lr_list = [
