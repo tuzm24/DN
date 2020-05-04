@@ -17,6 +17,7 @@ import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
 
+from PIL import Image
 
 class timer():
     def __init__(self):
@@ -134,7 +135,9 @@ class checkpoint():
                 if not queue.empty():
                     filename, tensor = queue.get()
                     if filename is None: break
-                    imageio.imwrite(filename, tensor.numpy())
+                    rgbimg = Image.fromarray(tensor.numpy(), 'YCbCr')
+                    rgbimg.convert('RGBA').save(filename)
+                    # imageio.imwrite(filename, tensor.numpy())
 
         self.process = [
             Process(target=bg_target, args=(self.queue,)) \
@@ -157,7 +160,7 @@ class checkpoint():
 
             postfix = ('SR', 'LR', 'HR')
             for v, p in zip(save_list, postfix):
-                normalized = v[0].mul(255 / self.args.rgb_range)
+                normalized = v[0].mul(255)
                 tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
                 self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
 
