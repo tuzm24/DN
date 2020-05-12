@@ -17,6 +17,7 @@ class Loss(nn.modules.loss._Loss):
         print('Preparing loss function:')
 
         self.n_GPUs = args.n_GPUs
+        self.isCPU = args.cpu
         self.loss = []
         self.loss_module = nn.ModuleList()
         for loss in args.loss.split('+'):
@@ -117,7 +118,7 @@ class Loss(nn.modules.loss._Loss):
             plt.close(fig)
 
     def get_loss_module(self):
-        if self.n_GPUs == 1:
+        if self.n_GPUs == 1 or self.isCPU:
             return self.loss_module
         else:
             return self.loss_module.module

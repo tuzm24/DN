@@ -23,9 +23,9 @@ parser.add_argument('--dir_data', type=str, default='./Dataset/BY_PIC/Training',
                     help='dataset directory')
 parser.add_argument('--dir_demo', type=str, default='./Dataset/BY_PIC/Validation',
                     help='demo image directory')
-parser.add_argument('--data_train', type=str, default='YUVData',
+parser.add_argument('--data_train', type=str, default='YUVData_with_qp',
                     help='train dataset name')
-parser.add_argument('--data_test', type=str, default='YUVData',
+parser.add_argument('--data_test', type=str, default='YUVData_with_qp',
                     help='test dataset name')
 parser.add_argument('--data_range', type=str, default='1-4000/801-816',
                     help='train/test data range')
@@ -47,9 +47,12 @@ parser.add_argument('--no_augment', action='store_true',
 parser.add_argument('--data_type', type=str, default=PictureFormat.INDEX_DIC[PictureFormat.UNFILTEREDRECON]+
                                                      '+'+PictureFormat.INDEX_DIC[PictureFormat.RECONSTRUCTION],
                     help='get data type')
+parser.add_argument('--tu_data', type=str, default='TU',
+                    help='tu data path name')
+parser.add_argument('--tu_data_type', type=str, default='QP')
 
 # Model specifications
-parser.add_argument('--model', default='rdn_down_up',
+parser.add_argument('--model', default='rdn_down_up_qp',
                     help='model name')
 
 parser.add_argument('--act', type=str, default='relu',
@@ -154,6 +157,7 @@ args.scale = list(map(lambda x: int(x), args.scale.split('+')))
 args.data_train = args.data_train.split('+')
 args.data_test = args.data_test.split('+')
 args.data_type = args.data_type.split('+')
+args.tu_data_type = args.tu_data_type.upper().split('+')
 
 
 if args.epochs == 0:

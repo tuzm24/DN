@@ -48,7 +48,7 @@ class YUVData(srdata.SRData):
         if not self.train:
             names_hr = deltestpath(names_hr)
             for i in range(len(names_lr)):
-                names_lr[i] = deltestpath(names_lr)
+                names_lr[i] = deltestpath(names_lr[i])
 
 
         return names_hr, names_lr
