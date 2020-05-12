@@ -2,6 +2,7 @@ import numpy as np
 import struct
 from help_func.help_python import myUtil
 import copy
+from collections import namedtuple
 
 class LearningIndex:
     TEST = 0
@@ -39,11 +40,23 @@ class TuDataIndex:
     MODE = 1
     DEPTH = 2
     HORTR = 3
-    VERTr = 4
-    MAX_NUM_COMPONENT = 4
+    VERTR = 4
+    MAX_NUM_COMPONENT = 5
+    INDEX_DIC = {QP:'QP', MODE:'MODE', DEPTH:'DEPTH',
+                HORTR:'HORTR',VERTR:'VERTR'}
+    NAME_DIC = {'QP':QP, 'MODE':MODE, 'DEPTH':DEPTH,
+                'HORTR':HORTR, 'VERTR':VERTR}
+
 
 class TuList:
     # 0: width, 1: height, 2: x_pos 3: y_pos, 4 : qp, 5 : mode ..
+    TU_MEAN_MAX = namedtuple('TU_MEAN_MAX', ['min_', 'max_'])
+    TU_MEAN_MAX_DIC = {}
+    TU_MEAN_MAX_DIC[TuDataIndex.NAME_DIC['QP']] = TU_MEAN_MAX(min_=22, max_=37)
+    TU_MEAN_MAX_DIC[TuDataIndex.NAME_DIC['MODE']] = TU_MEAN_MAX(min_=0, max_=70)
+    TU_MEAN_MAX_DIC[TuDataIndex.NAME_DIC['DEPTH']] = TU_MEAN_MAX(min_=0, max_=6)
+    TU_MEAN_MAX_DIC[TuDataIndex.NAME_DIC['HORTR']] = TU_MEAN_MAX(min_=0, max_=2)
+    TU_MEAN_MAX_DIC[TuDataIndex.NAME_DIC['VERTR']] = TU_MEAN_MAX(min_=0, max_=2)
 
     def __init__(self, tulist):
         if tulist is None:
@@ -57,6 +70,11 @@ class TuList:
         self.y_pos = self.tulist[3]
 
 
+    @staticmethod
+    def NormalizedbyMinMaxAll(arr, idxes):
+        for i, idx in enumerate(idxes):
+            arr[i] = (arr[i]-TuList.TU_MEAN_MAX_DIC[idx].min_)/TuList.TU_MEAN_MAX_DIC[idx].max_
+        return arr
     def resetMember(self):
         self.width = self.tulist[0]
         self.height = self.tulist[1]
@@ -98,7 +116,27 @@ class TuList:
         np.abs(filtered, out=filtered) # abs inplace
         return filtered
 
-
+    # 0: width, 1: height, 2: x_pos 3: y_pos, 4 : qp, 5 : mode ..
+    def _containTuList(self, area):
+        filtered = self.tulist[:,~np.any([(self.tulist[1] + self.tulist[3]) < area.y,
+                                          (self.tulist[2] + self.tulist[0]) < area.x,
+                                           self.tulist[3] > (area.y + area.height),
+                                           self.tulist[2] > (area.x + area.width)
+                                           ], axis = 0)]
+        filtered[2, filtered[2]<area.x] = area.x
+        filtered[3, filtered[3]<area.y] = area.y
+        # if filtered.min() < 0:
+        #     pass
+        filtered[0, (filtered[0] + filtered[2]) > (area.x + area.width)] =\
+            (area.width + area.x) - filtered[2, (filtered[0] + filtered[2]) > (area.x + area.width)]
+        filtered[1, (filtered[1] + filtered[3]) > (area.y + area.height)] -= \
+            (area.height + area.y) - filtered[3, (filtered[1] + filtered[3]) > (area.y + area.height)]
+        # np.abs(filtered, out=filtered) # abs inplace
+        self.tulist = filtered
+        self.tulist[2] -= area.x
+        self.tulist[3] -= area.y
+        self.resetMember()
+        return self
 
     def relateTo(self, pos):
         self.tulist[:, 2] = self.tulist[:, 2] - pos.x
@@ -142,9 +180,18 @@ class TuList:
         # 0: width, 1: height, 2: x_pos 3: y_pos, 4 : qp, 5 : mode
         tumap = np.zeros((height, width))
         for i in range(len(self.width)):
-            tumap[self.y_pos[i]:self.y_pos[i] + self.height[i] ,
+            tumap[self.y_pos[i]:self.y_pos[i] + self.height[i],
             self.x_pos[i] : self.x_pos[i] + self.width[i]] = self.tulist[4+idx, i]
         return tumap
+
+    def getTuMaskFromIndexes(self, idxes, height, width):
+        if len(idxes)==0:
+            return
+        tumaps = np.zeros((height, width, len(idxes)))
+        n_tulist = np.stack([self.tulist[x+4] for x in idxes], axis=1)
+        for i, tu in enumerate(self.tulist.T):
+            tumaps[tu[3]:tu[3]+tu[1], tu[2]:tu[0]+tu[2],:] = n_tulist[i]
+        return tumaps.transpose((2,0,1))
 
     def getMeanTuValue(self, idx):
         return np.mean(self.tulist[4+idx])

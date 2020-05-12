@@ -39,11 +39,12 @@ class Trainer():
         timer_data, timer_model = utility.timer(), utility.timer()
         # TEMP
         self.loader_train.dataset.set_scale(0)
-        for batch, (lr, hr, _,) in enumerate(self.loader_train):
+        for batch, (lr, hr, ext, _) in enumerate(self.loader_train):
+            if ext is not None:
+                lr[0] = torch.cat((lr[0], ext), axis=1)
             lr, hr = self.prepare(lr, hr)
             timer_data.hold()
             timer_model.tic()
-
             self.optimizer.zero_grad()
             sr = self.model(lr[0], 0)
             loss = self.loss(sr, hr)
@@ -86,7 +87,9 @@ class Trainer():
         for idx_data, d in enumerate(self.loader_test):
             for idx_scale, scale in enumerate(self.scale):
                 d.dataset.set_scale(idx_scale)
-                for lr, hr, filename in tqdm(d, ncols=80):
+                for lr, hr, ext, filename in tqdm(d, ncols=80):
+                    if ext is not None:
+                        lr[0] = torch.cat((lr[0], ext), axis=1)
                     lr, hr = self.prepare(lr, hr)
                     sr = self.model(lr[0], idx_scale)
                     sr = utility.quantize(sr, self.args.rgb_range)
@@ -99,7 +102,7 @@ class Trainer():
                         lr[1], hr, scale, self.args.rgb_range, dataset=d
                     )
                     if self.args.save_gt:
-                        save_list.extend([lr[0], hr])
+                        save_list.extend([lr[0][:3], hr])
 
                     if self.args.save_results:
                         self.ckp.save_results(d, filename[0], save_list, scale)
