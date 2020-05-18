@@ -108,7 +108,7 @@ class Model(nn.Module):
         b, c, h, w = x.size()
         h_half, w_half = h // 2, w // 2
 
-        hshave = wshave = shave, shave
+        hshave, wshave = shave, shave
         if h_half%2==1:
             hshave = hshave+1
         if w_half%2==1:

@@ -66,6 +66,6 @@ class YUVData(srdata.SRData):
         # pair = common.set_channel(*pair, n_channels=self.args.n_colors)
         # pair_t = common.np2Tensor(*pair, rgb_range=self.args.rgb_range)
 
-        return common.np2Tensor2(lr), common.np2Tensor2([hr])[0], filename
+        return common.np2Tensor2(lr), common.np2Tensor2([hr])[0], [None], filename
 
 

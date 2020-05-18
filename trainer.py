@@ -40,7 +40,7 @@ class Trainer():
         # TEMP
         self.loader_train.dataset.set_scale(0)
         for batch, (lr, hr, ext, _) in enumerate(self.loader_train):
-            if ext is not None:
+            if ext[0] is not None:
                 lr[0] = torch.cat((lr[0], ext), axis=1)
             lr, hr = self.prepare(lr, hr)
             timer_data.hold()
@@ -88,7 +88,7 @@ class Trainer():
             for idx_scale, scale in enumerate(self.scale):
                 d.dataset.set_scale(idx_scale)
                 for lr, hr, ext, filename in tqdm(d, ncols=80):
-                    if ext is not None:
+                    if ext[0] is not None:
                         lr[0] = torch.cat((lr[0], ext), axis=1)
                     lr, hr = self.prepare(lr, hr)
                     sr = self.model(lr[0], idx_scale)
