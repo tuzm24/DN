@@ -3,7 +3,7 @@ from data import srdata
 import glob
 from help_func.CompArea import PictureFormat
 from data import common
-
+import numpy as np
 
 class YUVData(srdata.SRData):
     def __init__(self, args, name='DIV2K', train=True, benchmark=False):
@@ -66,6 +66,6 @@ class YUVData(srdata.SRData):
         # pair = common.set_channel(*pair, n_channels=self.args.n_colors)
         # pair_t = common.np2Tensor(*pair, rgb_range=self.args.rgb_range)
 
-        return common.np2Tensor2(lr), common.np2Tensor2([hr])[0], [None], filename
+        return common.np2Tensor2(lr), common.np2Tensor2([hr])[0], np.array(float('Nan')), filename
 
 
