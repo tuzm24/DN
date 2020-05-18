@@ -27,7 +27,7 @@ parser.add_argument('--data_train', type=str, default='YUVData_with_qp',
                     help='train dataset name')
 parser.add_argument('--data_test', type=str, default='YUVData_with_qp',
                     help='test dataset name')
-parser.add_argument('--data_range', type=str, default='1-4000/801-816',
+parser.add_argument('--data_range', type=str, default='1-4000/801-840',
                     help='train/test data range')
 parser.add_argument('--ext', type=str, default='npz',
                     help='dataset file extension')

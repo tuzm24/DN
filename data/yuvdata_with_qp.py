@@ -49,8 +49,8 @@ class YUVData_with_qp(srdata.SRData):
         def deltestpath(l):
             new_one = []
             for path in l:
-                if '1352' in path:
-                    new_one.append(path)
+                # if '1352' in path:
+                new_one.append(path)
             return new_one
         if not self.train:
             names_hr = deltestpath(names_hr)
