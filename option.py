@@ -150,6 +150,8 @@ parser.add_argument('--save_results', action='store_true', default=True,
 parser.add_argument('--save_gt', action='store_true', default=True,
                     help='save low-resolution and high-resolution images together')
 
+parser.add_argument('--exp_dir', type=str, default='', help='set experiment dir')
+
 args = parser.parse_args()
 template.set_template(args)
 

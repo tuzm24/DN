@@ -52,7 +52,10 @@ class checkpoint():
         self.log = torch.Tensor()
         now = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
-        if not args.load:
+
+        if not args.exp_dir:
+            self.dir = os.path.join('experiment', args.exp_dir)
+        elif not args.load:
             if not args.save:
                 args.save = now
             self.dir = os.path.join('experiment', args.model)
