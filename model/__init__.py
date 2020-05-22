@@ -108,7 +108,13 @@ class Model(nn.Module):
         b, c, h, w = x.size()
         h_half, w_half = h // 2, w // 2
 
-        h_size, w_size = h_half + shave, w_half + shave
+        hshave, wshave = shave, shave
+        if h_half%2==1:
+            hshave = hshave+1
+        if w_half%2==1:
+            w_half = w_half+1
+
+        h_size, w_size = h_half + hshave, w_half + wshave
 
 
         lr_list = [
@@ -134,7 +140,7 @@ class Model(nn.Module):
         h_size, w_size = scale * h_size, scale * w_size
         shave *= scale
 
-        output = x.new(b, sr_list[0].size()[1], h, w)
+        output = x.new(b, c, h, w)
         output[:, :, 0:h_half, 0:w_half] \
             = sr_list[0][:, :, 0:h_half, 0:w_half]
         output[:, :, 0:h_half, w_half:w] \
