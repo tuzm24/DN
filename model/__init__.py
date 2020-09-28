@@ -6,11 +6,50 @@ import torch.nn as nn
 import torch.nn.parallel as P
 import torch.utils.model_zoo
 
+from collections import namedtuple
+
+boundary = namedtuple('boundary', ['above', 'below', 'left', 'right'])
+
+class CTU_input_output:
+    def __init__(self, x, y, w, h, shave, ctu_size):
+        if x+ctu_size >= w:
+            right = w
+        else:
+            right = x + ctu_size
+
+        if right + shave >= w:
+            shave_right = w - right
+        else:
+            shave_right = shave
+
+        if y + ctu_size >= h:
+            below = h
+        else:
+            below = y + ctu_size
+
+        if below + shave >= h:
+            shave_below = h - below
+        else:
+            shave_below = shave
+
+        if x-shave <=0:
+            shave_left = x
+        else:
+            shave_left = shave
+        if y-shave <=0:
+            shave_above = y
+        else:
+            shave_above = shave
+        self.input_bounday = boundary(y-shave_above, below+shave_below,
+                                 x-shave_left, right+shave_right)
+        self.shave = boundary(shave_above, shave_below, shave_left, shave_right)
+        self.output_boundary = boundary(y, below, x, right)
+
+
 class Model(nn.Module):
     def __init__(self, args, ckp):
         super(Model, self).__init__()
         print('Making model...')
-
         self.scale = args.scale
         self.idx_scale = 0
         self.input_large = (args.model == 'VDSR')
@@ -21,7 +60,6 @@ class Model(nn.Module):
         self.device = torch.device('cpu' if args.cpu else 'cuda')
         self.n_GPUs = args.n_GPUs
         self.save_models = args.save_models
-
         module = import_module('model.' + args.model.lower())
         self.model = module.make_model(args).to(self.device)
         if args.precision == 'half':
@@ -151,6 +189,32 @@ class Model(nn.Module):
             = sr_list[3][:, :, (h_size - h + h_half):h_size, (w_size - w + w_half):w_size]
 
         return output
+
+    def forward_CTU(self, x, shave=10, ctu_size=128,
+                    ctu_info_array=None):
+        b, c, h, w = x.size()
+        ctu_array = []
+        #by raster scan
+        for y in range(0, h, ctu_size):
+            for x in range(0, w, ctu_size):
+                ctu_array.append(CTU_input_output(x, y, w, h, shave,ctu_size))
+        sr = 0
+        for b in ctu_array:
+            sub_sr = self.model(x[:, :, b.input_bounday.above:b.input_bounday.below,
+                            b.input_bounday.left:b.input_bounday.right])
+            if not sr:
+                sr = x.new(b, sub_sr[0].size()[1], h, w)
+            sr[:, :, b.output_boundary.above:b.output_boundary.below,
+            b.output_boundary.left:b.output_boundary.right] \
+                = sub_sr[:,:,b.shave.above:-b.shave.below, b.shave.left,-b.shave.right]
+        assert sr
+        return sr
+
+
+
+
+
+
 
     def forward_x8(self, *args, forward_function=None):
         def _transform(v, op):

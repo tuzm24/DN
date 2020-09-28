@@ -3,8 +3,8 @@ import pandas as pd
 from io import StringIO
 import math
 from collections import namedtuple
-
-
+from parse import parse
+import os
 
 class Reporting:
 
@@ -133,6 +133,106 @@ SlideShow_1280x720_20,37,161.639999,39.275398,45.6077,47.177299,183.113007,0.521
             return self.df[self.df.seq==seq_name].iloc[0].isCTC
         except:
             return False
+
+    def getEncResultFromFile(self, path):
+        path = os.path.basename(path)
+        ras_str = str(os.path.splitext(path)[0].split('_')[-1]).lower()
+        isras = False
+        rasid = 0
+        if 'rs' in ras_str:
+            isras = True
+            rasid = int(ras_str.split('rs')[-1])
+        elif 'ras' in ras_str:
+            isras = True
+            rasid = int(ras_str.split('ras')[-1])
+        try:
+            framerate = int(path.split('_')[2])
+        except:
+            framerate = int(path.split('_')[2].split('f')[0])
+        with open(path, 'r') as f:
+            data = f.read()
+            totaldata = parse('{}Total Frames{}\n{}\n{}', data)
+            totaldata = totaldata[2].split()
+            codedframe = int(totaldata[0])
+            kbps = float(totaldata[2])
+            Ypsnr = float(totaldata[3])
+            Upsnr = float(totaldata[4])
+            Vpsnr = float(totaldata[5])
+            # print(totalframe, kbps, Ypnsr, Upsnr, Vpsnr)
+            encT = parse('{} Total Time:     {} sec{}', data)
+            encT = float(encT[1])
+            # print(totalenctime)
+            ikbps = iYpsnr = iUpsnr = iVpsnr = iencT = 0
+            if isras and rasid != 0:
+                poc1data = parse(
+                    '{}POC    0 TId: {} ( I-SLICE, QP {} )     {} bits [Y {} dB    U {} dB    V {} dB]{}[ET   {} ] {}',
+                    data)
+                ikbps = float(poc1data[3])
+                iYpsnr = float(poc1data[4])
+                iUpsnr = float(poc1data[5])
+                iVpsnr = float(poc1data[6])
+                iencT = float(poc1data[8])
+                ikbps = (ikbps * self.seq_info.frameRate) / 1000.0
+                # print(ikbps, iYpsnr, iUpsnr, iVpsnr, iencT)
+            if isras > 1:
+                kbps = kbps * codedframe - ikbps
+                Ypsnr = Ypsnr * codedframe - iYpsnr
+                Upsnr = Upsnr * codedframe - iUpsnr
+                Vpsnr = Vpsnr * codedframe - iVpsnr
+                encT = encT - iencT
+
+
+    def setEncDecData(self, encpath, decpath):
+        with open(encpath, 'r') as f:
+            data = f.read()
+            totaldata = parse('{}Total Frames{}\n{}\n{}', data)
+            totaldata = totaldata[2].split()
+            codedframe = int(totaldata[0])
+            kbps = float(totaldata[2])
+            Ypsnr = float(totaldata[3])
+            Upsnr = float(totaldata[4])
+            Vpsnr = float(totaldata[5])
+            # print(totalframe, kbps, Ypnsr, Upsnr, Vpsnr)
+            encT = parse('{} Total Time:     {} sec{}', data)
+            encT = float(encT[1])
+            # print(totalenctime)
+            ikbps = iYpsnr = iUpsnr = iVpsnr = iencT = 0
+            if self.rasnum>1 and self.rasid !=0:
+                poc1data = parse(
+                    '{}POC    0 TId: {} ( I-SLICE, QP {} )     {} bits [Y {} dB    U {} dB    V {} dB]{}[ET   {} ] {}',
+                    data)
+                ikbps = float(poc1data[3])
+                iYpsnr = float(poc1data[4])
+                iUpsnr = float(poc1data[5])
+                iVpsnr = float(poc1data[6])
+                iencT = float(poc1data[8])
+                ikbps = (ikbps*self.seq_info.frameRate)/1000.0
+                # print(ikbps, iYpsnr, iUpsnr, iVpsnr, iencT)
+            if self.rasnum>1:
+                kbps = kbps*codedframe - ikbps
+                Ypsnr = Ypsnr*codedframe - iYpsnr
+                Upsnr = Upsnr*codedframe - iUpsnr
+                Vpsnr = Vpsnr*codedframe - iVpsnr
+                encT = encT - iencT
+
+        with open(decpath, 'r') as f:
+            data = f.read()
+            decT = parse('{} Total Time:{}sec{}', data)
+            decT = float(decT[1].split()[0])
+            # print(decT[1])
+            idecT = 0
+            if self.rasnum > 1 and self.rasid != 0:
+                idecT = parse('{}POC    0 TId{}[DT{}]{}', data)
+                idecT = float(idecT[2].split()[0])
+                decT = decT - idecT
+            # print(idecT[2])
+            iserror = parse('{}ERROR{}', data)
+            if iserror != None:
+                self.ismd5error = True
+            if self.rasid>0:
+                decT = decT - idecT
+        return kbps, Ypsnr, Upsnr, Vpsnr, encT, decT, codedframe
+            # print(iserror)
 
     @staticmethod
     def getBDrate(rateA, distA, rateB, distB):

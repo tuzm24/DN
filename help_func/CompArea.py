@@ -3,6 +3,8 @@ import struct
 from help_func.help_python import myUtil
 import copy
 from collections import namedtuple
+from typing import Tuple
+from math import log2
 
 class LearningIndex:
     TEST = 0
@@ -226,6 +228,18 @@ class TuList:
         tulist = np.concatenate((self.tulist,other.tulist), axis = 0)
         return TuList(tulist)
 
+    @staticmethod
+    def getWidangIntraMode(dirMode, width, height):
+        if dirMode<2:
+            return dirMode
+        modeshift: Tuple[int, int, int, int, int, int] = (0, 6, 10, 12, 14, 15)
+        deltaSize = abs(int(log2(width) - log2(height)))
+        if width>height and dirMode<2+modeshift[deltaSize]:
+            return dirMode + 65
+        elif height>width and dirMode> 66 - modeshift[deltaSize]:
+            return dirMode - 67
+        else:
+            return dirMode
 
 class Size:
     def __init__(self, width, height):
