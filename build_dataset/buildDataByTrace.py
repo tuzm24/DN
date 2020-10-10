@@ -211,7 +211,7 @@ class BuildData(object):
 
     #autoset
     def __init__(self, Datasetpath):
-        Datasetpath = './Dataset/' + Datasetpath
+        # Datasetpath = './Dataset/' + Datasetpath
         self.Datasetpath = Datasetpath
         os.makedirs(Datasetpath, exist_ok=True)
         os.makedirs(os.path.join(Datasetpath, PictureFormat.INDEX_DIC[PictureFormat.ORIGINAL]), exist_ok=True)
@@ -483,7 +483,7 @@ class SplitManager:
 
     def runThreading(self, command, isTraining):
         name = self.runDecoder(command)
-        splitimg = imgInfo(name, LearningIndex.INDEX_DIC[isTraining], self.getconditionduc(isTraining))
+        splitimg = imgInfo(name, os.path.join(self.cfg.DATASET_PATH, LearningIndex.INDEX_DIC[isTraining]), self.getconditionduc(isTraining))
         splitimg.getDataByTrace()
         shutil.rmtree(name)
 
