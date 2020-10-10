@@ -49,6 +49,13 @@ class TuDataIndex:
     NAME_DIC = {'QP':QP, 'MODE':MODE, 'DEPTH':DEPTH,
                 'HORTR':HORTR, 'VERTR':VERTR}
 
+class PredMode:
+    MODE_INTER = 0
+    MODE_INTRA = 1
+    MODE_IBC = 2
+    MODE_PLT = 3
+    NUMBER_OF_REDICTION_MODES = 4
+
 
 class TuList:
     # 0: width, 1: height, 2: x_pos 3: y_pos, 4 : qp, 5 : mode ..
