@@ -1,3 +1,5 @@
+from help_func.istarmap import istarmap
+
 import os
 import time
 import subprocess
@@ -11,6 +13,7 @@ from multiprocessing import Pool, Lock
 from help_func.logging import LoggingHelper
 from help_func.help_python import myUtil
 import shutil
+import tqdm
 
 import copy
 import random
@@ -20,6 +23,8 @@ from help_func.CompArea import UnitBuf
 from help_func.CompArea import Component
 from help_func.CompArea import ChromaFormat
 from help_func.CompArea import Area
+
+
 
 from collections import namedtuple
 import csv
@@ -86,10 +91,12 @@ reblockstat = r'^BlockStat: POC @\('
 
 
 class investText:
-    infotext = 'blocksinfo.txt'
+    infotext = './build_dataset/blocksinfo.txt'
+    blockdir = 'block'
     def __init__(self, rootdir):
         self.rootdir = rootdir
         self.infopath = os.path.join(investText.infotext)
+        self.blockdir = os.path.join(rootdir, investText.blockdir)
 
         self.info = open(self.infopath, mode='r').readlines()
         self.width, self.height = self.getWidthHeight()
@@ -509,9 +516,12 @@ class SplitManager:
 
     def getDataset(self, kind_of_data, obj_POC=100):
         commands = self.initCommand(self.datatype[kind_of_data].binlist)
-        pool = Pool(self.corenum)
-        pool.starmap(self.runThreading,
-                     zip(commands, [self.datatype[kind_of_data].opt_num] * len(commands)))
+        with Pool(self.corenum) as pool:
+            for i, _ in enumerate(pool.istarmap(self.runThreading,
+                                             zip(commands, [self.datatype[kind_of_data].opt_num] * len(commands)))):
+                print("Progress {} / {}".format(i+1, len(commands)))
+            # pool.starmap(self.runThreading,
+            #          zip(commands, [self.datatype[kind_of_data].opt_num] * len(commands)))
         return
 
     def getPOC(self, name):
