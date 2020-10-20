@@ -86,12 +86,10 @@ reblockstat = r'^BlockStat: POC @\('
 
 
 class investText:
-    infotext = 'initInfo.txt'
-    blockdir = 'block'
+    infotext = 'blocksinfo.txt'
     def __init__(self, rootdir):
         self.rootdir = rootdir
-        self.infopath = os.path.join(rootdir, investText.infotext)
-        self.blockdir = os.path.join(rootdir, investText.blockdir)
+        self.infopath = os.path.join(investText.infotext)
 
         self.info = open(self.infopath, mode='r').readlines()
         self.width, self.height = self.getWidthHeight()
@@ -130,13 +128,14 @@ class investPOCBlocks:
     types = ['BlockStat: POC ',
              'PPSStat: POC '
              ]
+    numpy_types = ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'int64', 'uint64']
 
     def __init__(self, initinfo, poc):
         self.globalinfo = initinfo
         self.poc = poc
-        self.blockstats = open(os.path.join(self.globalinfo.blockdir, (str(poc) + '.txt')), 'r').readlines()
-        self.block_named_tuple, self.blockdic = self.initBlockDic()
         self.ppsdic = {}
+        self.blockstats = open(os.path.join(self.globalinfo.blockdir, (str(poc) + '.txt')), 'r').readlines()
+        self.block_named_tuple, self.block_type,self.blockdic = self.initBlockDic()
         self.normalBlockRex = re.compile('(BlockStat: POC )(?P<poc>\d+) @\(\s*(?P<xpos>\d+),\s*(?P<ypos>\d+)\) \[\s*(?P<w>\d+)x\s*(?P<h>\d+)\] (?P<name>[^=]*)=\{*(?P<value>[-\d\s,]*)\}*')
         self.geoMVRex = re.compile('(BlockStat: POC )(?P<poc>\d+) @\[(?P<vectors>.*)--] (?P<name>.*)=\{*(?P<value>[-\d\s,]*)\}*')
         self.ppsRex = re.compile('(PPSStat: POC )(?P<poc>\d+) @ (?P<name>.*)=(?P<value>[-\d,]*)')
@@ -147,10 +146,12 @@ class investPOCBlocks:
         blockType = namedtuple('blockType', ['name', 'type', 'scale', 'range'])
         tmp = {}
         tmp2 = {}
+        tmp3  = {}
         for info in self.globalinfo.rules:
             tmp[info[0]] = blockType(info[0], info[1], info[2][1] if isinstance(info[2], tuple) else 0, info[2] if isinstance(info[2], list) else [])
+            tmp3[info[0]] = info[1] if info[1] in investPOCBlocks.numpy_types else 'int16'
             tmp2[info[0]] = list()
-        return tmp, tmp2
+        return tmp, tmp3, tmp2
 
 
 
@@ -161,7 +162,7 @@ class investPOCBlocks:
         return arr
 
     def setGeoMV(self, dic):
-        self.blockdic[dic['name']].append([self.decompGeoVect(dic['vectors']), *list(map(int, dic['value'].split(',')))])
+        self.blockdic[dic['name']].append(self.decompGeoVect(dic['vectors']) + list(map(int, dic['value'].split(','))))
         return
 
     def setNormalBlock(self, dic):
@@ -185,10 +186,10 @@ class investPOCBlocks:
 
 
 
-
-
-it = investText('C:\\Users\\YangwooKim\\Desktop\\Codec\\VVC-8.0\\VVCSoftware_VTM-VTM-8.0-getdata\\VVCSoftware_VTM-VTM-8.0-getdata\\build\\source\\App\\DecoderApp\\RA_BQTerrace_1920x1080_60_8bit_32_RS0')
-ipb = investPOCBlocks(it, 16)
+#
+#
+# it = investText('C:\\Users\\YangwooKim\\Desktop\\Codec\\VVC-8.0\\VVCSoftware_VTM-VTM-8.0-getdata\\VVCSoftware_VTM-VTM-8.0-getdata\\build\\source\\App\\DecoderApp\\RA_BQTerrace_1920x1080_60_8bit_32_RS0')
+# ipb = investPOCBlocks(it, 16)
 
 
 class BuildData(object):
@@ -288,7 +289,7 @@ class imgInfo(BuildData):
         self.logger.info("%s binfile get training set.." % self.root)
 
         for poc, img in self.poc_dic.items():
-            basename = '{}_POC{}.npz'.format(self.basename, poc)
+            basename = '{}_POC{}'.format(self.basename, poc)
             tmp_pic_buff = {}
             for key, value in self.condition_dic.items():
                 if value:
@@ -305,9 +306,10 @@ class imgInfo(BuildData):
             blockpath = os.path.join(self.Datasetpath, 'BLOCK', basename)
             for key, value in blockInPOC.blockdic.items():
                 if value:
-                    np.save(os.path.join(blockpath, key + '.npz'), np.array(value))
-            ppsparam = [*blockInPOC.ppsdic.items()]
-            np.savez(os.path.join(blockpath, 'PPSParam.npz'), *ppsparam)
+                    np.save(os.path.join(blockpath, key), np.array(value, dtype=blockInPOC.block_type[key]))
+
+            # ppsparam = [*blockInPOC.ppsdic.items()]
+            np.savez(os.path.join(blockpath, 'PPSParam.npz'), **blockInPOC.ppsdic)
 
 
     def getPSNR(self, org, control):
@@ -538,7 +540,7 @@ if __name__ == '__main__':
     # os.chdir("../")
     print(os.getcwd())
     sp = SplitManager()
-    # sp.getDataset('Training')
+    sp.getDataset('Training')
     sp.getDataset('Validation')
-    # sp.getDataset('Test')
+    sp.getDataset('Test')
 

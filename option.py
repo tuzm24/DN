@@ -19,13 +19,13 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
-parser.add_argument('--dir_data', type=str, default='./Dataset/BY_PIC/Training',
+parser.add_argument('--dir_data', type=str, default='./Dataset/VALIDATION',
                     help='dataset directory')
-parser.add_argument('--dir_demo', type=str, default='./Dataset/BY_PIC/Validation',
+parser.add_argument('--dir_demo', type=str, default='./Dataset/VALIDATION',
                     help='demo image directory')
-parser.add_argument('--data_train', type=str, default='YUVData_with_qp',
+parser.add_argument('--data_train', type=str, default='tracing_data',
                     help='train dataset name')
-parser.add_argument('--data_test', type=str, default='YUVData_with_qp',
+parser.add_argument('--data_test', type=str, default='tracing_data',
                     help='test dataset name')
 parser.add_argument('--data_range', type=str, default='1-4000/801-812',
                     help='train/test data range')
@@ -47,7 +47,7 @@ parser.add_argument('--no_augment', action='store_true',
 parser.add_argument('--data_type', type=str, default=PictureFormat.INDEX_DIC[PictureFormat.UNFILTEREDRECON]+
                                                      '+'+PictureFormat.INDEX_DIC[PictureFormat.RECONSTRUCTION],
                     help='get data type')
-parser.add_argument('--tu_data', type=str, default='TU',
+parser.add_argument('--tu_data', type=str, default='BLOCK',
                     help='tu data path name')
 parser.add_argument('--tu_data_type', type=str, default='QP')
 

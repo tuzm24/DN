@@ -7,8 +7,19 @@ import csv
 
 class myUtil(object):
 
-
-
+    @staticmethod
+    def removeExtinFolder(path):
+        for filename in os.listdir(path):
+            print(os.path.join(path,filename))
+            os.rename(os.path.join(path, filename),
+                      os.path.join(path, os.path.splitext(filename)[0]))
+    @staticmethod
+    def removeExtinFile(dir, ext):
+        for (path, dirnames, files) in os.walk(dir):
+            for filename in files:
+                if ext in filename:
+                    os.rename(os.path.join(path, filename),
+                              os.path.join(path, filename.replace(ext, '')))
     @staticmethod
     def static_vars(**kwargs):
         def decorate(func):
@@ -113,3 +124,9 @@ class SingletonInstance:
     cls.__instance = cls(*args, **kargs)
     cls.instance = cls.__getInstance
     return cls.__instance
+
+if __name__=='__main__':
+
+    os.chdir("../")
+    myUtil.removeExtinFolder('./Dataset/VALIDATION/BLOCK')
+    myUtil.removeExtinFile('./Dataset/VALIDATION/BLOCK', '.npz')
