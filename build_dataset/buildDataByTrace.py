@@ -314,7 +314,6 @@ class imgInfo(BuildData):
             for key, value in blockInPOC.blockdic.items():
                 if value:
                     np.save(os.path.join(blockpath, key), np.array(value, dtype=blockInPOC.block_type[key]))
-                    print("{} , {}".format(key, blockInPOC.block_type[key]))
             # ppsparam = [*blockInPOC.ppsdic.items()]
             np.savez(os.path.join(blockpath, 'PPSParam.npz'), **blockInPOC.ppsdic)
 
