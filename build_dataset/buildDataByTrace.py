@@ -91,11 +91,11 @@ reblockstat = r'^BlockStat: POC @\('
 
 
 class investText:
-    infotext = './build_dataset/blocksinfo.txt'
+    infotext = 'initinfo.txt'
     blockdir = 'block'
     def __init__(self, rootdir):
         self.rootdir = rootdir
-        self.infopath = os.path.join(investText.infotext)
+        self.infopath = os.path.join(rootdir, investText.infotext)
         self.blockdir = os.path.join(rootdir, investText.blockdir)
 
         self.info = open(self.infopath, mode='r').readlines()
@@ -314,7 +314,7 @@ class imgInfo(BuildData):
             for key, value in blockInPOC.blockdic.items():
                 if value:
                     np.save(os.path.join(blockpath, key), np.array(value, dtype=blockInPOC.block_type[key]))
-
+                    print("{} , {}".format(key, blockInPOC.block_type[key]))
             # ppsparam = [*blockInPOC.ppsdic.items()]
             np.savez(os.path.join(blockpath, 'PPSParam.npz'), **blockInPOC.ppsdic)
 
@@ -494,7 +494,11 @@ class SplitManager:
         name = self.runDecoder(command)
         splitimg = imgInfo(name, os.path.join(self.cfg.DATASET_PATH, LearningIndex.INDEX_DIC[isTraining]), self.getconditionduc(isTraining))
         splitimg.getDataByTrace()
-        shutil.rmtree(name)
+        try:
+            shutil.rmtree(name)
+        except Exception as e:
+            self.logger.error(e)
+
 
     def getconditionduc(self, isTraining):
         if(isTraining!=LearningIndex.TEST):
@@ -551,6 +555,6 @@ if __name__ == '__main__':
     print(os.getcwd())
     sp = SplitManager()
     sp.getDataset('Training')
-    sp.getDataset('Validation')
-    sp.getDataset('Test')
+    # sp.getDataset('Validation')
+    # sp.getDataset('Test')
 
