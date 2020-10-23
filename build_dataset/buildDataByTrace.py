@@ -460,6 +460,7 @@ class SplitManager:
                     if tmp == '_'.join(os.path.basename(binfile).split('_')[2:5]):
                         command = self.cfg.DECODER_PATH + ' -b ' + binfile + ' -i ' + org + ' -bd 8'
                         commands.append((os.path.basename(binfile), command))
+                        break
             else:
                 for tmp, org in zip(video_org_list, self.video_orglist):
                     if os.path.basename(binfile).lower().split('_')[1] != 'netflix':
@@ -467,11 +468,13 @@ class SplitManager:
                             # command = Decoderpath + ' -b ' + binfile + ' -i ' + org + ' -bd ' + bdDic[tmp]
                             command = self.cfg.DECODER_PATH + ' -b ' + binfile + ' -i ' + org + ' -bd ' + bdDic[tmp]
                             commands.append((os.path.basename(binfile), command))
+                            break
                     else:
                         if '_'.join(os.path.basename(binfile).lower().split("_")[1:5]).lower() == tmp:
                             # command = Decoderpath + ' -b ' + binfile + ' -i ' + org + ' -bd ' + bdDic[tmp]
                             command = self.cfg.DECODER_PATH + ' -b ' + binfile + ' -i ' + org + ' -bd ' + bdDic[tmp]
                             commands.append((os.path.basename(binfile), command))
+                            break
 
         for i in range(len(commands)):
             commands[i] = (commands[i][0], commands[i][1] + " --TraceFile=DecTrace.txt --TraceRule=\"D_BLOCK_STATISTICS_ALL:POC>=0\"")
@@ -554,6 +557,6 @@ if __name__ == '__main__':
     print(os.getcwd())
     sp = SplitManager()
     sp.getDataset('Training')
-    # sp.getDataset('Validation')
-    # sp.getDataset('Test')
+    sp.getDataset('Validation')
+    sp.getDataset('Test')
 
