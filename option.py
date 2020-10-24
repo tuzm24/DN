@@ -19,7 +19,7 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
-parser.add_argument('--dir_data', type=str, default='./Dataset/VALIDATION',
+parser.add_argument('--dir_data', type=str, default='./Dataset/TRAINING',
                     help='dataset directory')
 parser.add_argument('--dir_demo', type=str, default='./Dataset/VALIDATION',
                     help='demo image directory')

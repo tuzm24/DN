@@ -395,7 +395,7 @@ class imgInfo(BuildData):
 
 class SplitManager:
     cfg = Config('./build_dataset/data_config.yml', logger)
-    pocreg = re.compile('.*_RS(?P<ras>\d+).')
+    rasreg = re.compile('.*_RS(?P<ras>\d+).')
     def __init__(self):
         self.logger = LoggingHelper.get_instance(always=True).logger
 
@@ -476,6 +476,18 @@ class SplitManager:
                             commands.append((os.path.basename(binfile), command))
                             break
 
+        tmp_com = []
+        for c in commands:
+            ras = self.getRAS(c)
+            if ras is None:
+                tmp_com.append(c)
+            else:
+                if ras%2 == 0:
+                    tmp_com.append(c)
+        commands = tmp_com
+
+
+
         for i in range(len(commands)):
             commands[i] = (commands[i][0], commands[i][1] + " --TraceFile=DecTrace.txt --TraceRule=\"D_BLOCK_STATISTICS_ALL:POC>=0\"")
         return commands
@@ -530,8 +542,8 @@ class SplitManager:
             #          zip(commands, [self.datatype[kind_of_data].opt_num] * len(commands)))
         return
 
-    def getPOC(self, name):
-        return int(self.pocreg.match(name).group('ras'))
+    def getRAS(self, name):
+        return int(self.rasreg.match(name).group('ras'))
 
     @staticmethod
     def initHeaderAndWriteCSV(dir, header, csv_list):

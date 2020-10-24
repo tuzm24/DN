@@ -11,6 +11,7 @@ from help_func.CompArea import TuDataIndex
 
 
 class tracing_data(srdata.SRData):
+    ppsfilename = 'PPSParam.npz'
     def __init__(self, args, name='DIV2K', train=True, benchmark=False):
         data_range = [r.split('-') for r in args.data_range.split('/')]
         if train:
@@ -27,9 +28,20 @@ class tracing_data(srdata.SRData):
         super(tracing_data, self).__init__(
             args, name=name, train=train, benchmark=benchmark
         )
+        self.pps_data  = self._scanPPSData()
         self.blocks = self._scanTuData()
         self.blocks_ext = '.npy'
         self.idxes = [TuDataIndex.NAME_DIC[x] for x in self.args.tu_data_type]
+
+    def _scanPPSData(self):
+        named_ppsFile = []
+        for f in self.images_hr:
+            filename, _ = os.path.splitext(os.path.basename(f))
+            named_ppsFile.append(os.path.join(
+                self.dir_lr, '{}/{}/{}'.format(
+                    'BLOCK', filename, self.ppsfilename
+                )
+            ))
 
 
     def _scan(self):
