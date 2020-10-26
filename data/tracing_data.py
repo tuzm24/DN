@@ -8,6 +8,10 @@ import numpy as np
 import random
 from help_func.CompArea import TuList
 from help_func.CompArea import TuDataIndex
+from help_func.help_python import myUtil
+from help_func.typedef import *
+
+
 
 
 class tracing_data(srdata.SRData):
@@ -29,9 +33,11 @@ class tracing_data(srdata.SRData):
             args, name=name, train=train, benchmark=benchmark
         )
         self.pps_data  = self._scanPPSData()
-        self.blocks = self._scanTuData()
         self.blocks_ext = '.npy'
+        self.blocks = {}
+        self._scanblockData()
         self.idxes = [TuDataIndex.NAME_DIC[x] for x in self.args.tu_data_type]
+        self.__getitem__(0)
 
     def _scanPPSData(self):
         named_ppsFile = []
@@ -42,6 +48,7 @@ class tracing_data(srdata.SRData):
                     'BLOCK', filename, self.ppsfilename
                 )
             ))
+        return named_ppsFile
 
 
     def _scan(self):
@@ -60,31 +67,19 @@ class tracing_data(srdata.SRData):
 
         names_hr = names_hr[self.begin - 1:self.end]
         names_lr = [n[self.begin - 1:self.end] for n in names_lr]
-        def deltestpath(l):
-            new_one = []
-            for path in l:
-                # if '1352' in path:
-                new_one.append(path)
-            return new_one
-        if not self.train:
-            names_hr = deltestpath(names_hr)
-            for i in range(len(names_lr)):
-                names_lr[i] = deltestpath(names_lr[i])
-
-
         return names_hr, names_lr
 
-    def _scanTuData(self):
-        named_tu = []
-        s = self.args.tu_data
+    def _scanblockData(self):
         for f in self.images_hr:
             filename, _ = os.path.splitext(os.path.basename(f))
-            named_tu.append(os.path.join(
-                self.dir_lr, '{}/{}'.format(
-                    s, filename
-                )
-            ))
-        return named_tu
+            block_dir = os.path.join(self.dir_lr,
+                                     'BLOCK', filename)
+            for file in myUtil.getFileList(block_dir, self.blocks_ext):
+                key, _ = os.path.splitext(os.path.basename(file))
+                if key in self.blocks:
+                    self.blocks[key].append(file)
+                else:
+                    self.blocks[key] = [file]
 
     def _set_filesystem(self, dir_data):
         self.apath = os.path.join(dir_data)
@@ -163,7 +158,30 @@ class tracing_data(srdata.SRData):
             if self.args.no_augment: lr, hr = common.augment(lr, hr)
 
         return lr, hr, (ty, tpy, tx, tpx), (imgy, imgx)
+    # 0:xpos, 1:ypos, 2:width, 3:height
+    def getBlock2d(self, y, dy, x, dx, idx, name, value_idx = 0):
+        block2d = np.zeros((dy, dx))
+        dy = y + dy
+        dx = x + dx
+        block = np.load(self.blocks[name][idx])
+        filtered = block[:, ~np.any([(block[3] + block[1]) < y,
+                                     (block[0] + block[2]) < x,
+                                     block[1]>dy,
+                                     block[0]>dx
+                                     ], axis=0)]
+        filtered[0, filtered[0]<x] = x
+        filtered[1, filtered[1]<y] = y
+        filtered[2, (filtered[0] + filtered[2]) > dx] = dx - filtered[0, (filtered[0]+filtered[2] > dx)]
+        filtered[3, (filtered[1] + filtered[3]) > dy] = dy - filtered[1, (filtered[1] + filtered[3]) > dy]
+        filtered[0,:] -= x
+        filtered[1,:] -= y
+        for _xp, _yp, _w, _h, *values in filtered.T:
+            block2d[_yp:_yp+_h, _xp:_xp+_w] = values[value_idx]
+        return block2d
 
+    def getBlockScalar(self, idx, name, value_idx=0):
+        block = np.load(self.blocks[name][idx])
+        return block.mean(axis=0)
 
     def getTuMask(self, ty, tpy, tx, tpx, h, w, filename):
         tulist = TuList(np.load(
@@ -177,7 +195,7 @@ class tracing_data(srdata.SRData):
     def __getitem__(self, idx):
         lr, hr, filename = self._load_file(idx)
         lr, hr, pos, imgshape = self.get_patch(lr, hr)
-        extra_data = self.getTuMask(*pos, *imgshape, filename)
+        self.getBlock2d(*pos, idx, BlockType.Luma_IntraMode)
         # pair = common.set_channel(*pair, n_channels=self.args.n_colors)
         # pair_t = common.np2Tensor(*pair, rgb_range=self.args.rgb_range)
-        return common.np2Tensor2(lr), common.np2Tensor2([hr])[0], extra_data,filename
+        return common.np2Tensor2(lr), common.np2Tensor2([hr])[0]

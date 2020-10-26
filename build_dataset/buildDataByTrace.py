@@ -422,7 +422,7 @@ class SplitManager:
 
         return filelist
 
-    def initCommand(self, filelist):
+    def initCommand(self, filelist, isTraining):
         seqs = []
         bdDic = {}
         # frameDic = {}
@@ -475,17 +475,17 @@ class SplitManager:
                             command = self.cfg.DECODER_PATH + ' -b ' + binfile + ' -i ' + org + ' -bd ' + bdDic[tmp]
                             commands.append((os.path.basename(binfile), command))
                             break
-
-        tmp_com = []
-        for c in commands:
-            ras = self.getRAS(c)
-            if ras is None:
-                tmp_com.append(c)
-            else:
-                if ras%2 == 0:
+        if isTraining == LearningIndex.TRAINING:
+            tmp_com = []
+            for c in commands:
+                ras = self.getRAS(c[0])
+                if ras is None:
                     tmp_com.append(c)
-        commands = tmp_com
-
+                else:
+                    if ras%2 == 0:
+                        tmp_com.append(c)
+            commands = tmp_com
+        print("command len : {}".format(len(commands)))
 
 
         for i in range(len(commands)):
@@ -533,7 +533,7 @@ class SplitManager:
         return temp
 
     def getDataset(self, kind_of_data, obj_POC=100):
-        commands = self.initCommand(self.datatype[kind_of_data].binlist)
+        commands = self.initCommand(self.datatype[kind_of_data].binlist, self.datatype[kind_of_data].opt_num)
         with Pool(self.corenum) as pool:
             for i, _ in enumerate(pool.istarmap(self.runThreading,
                                              zip(commands, [self.datatype[kind_of_data].opt_num] * len(commands)))):
