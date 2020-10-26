@@ -290,33 +290,35 @@ class imgInfo(BuildData):
         except Exception as e:
             self.logger.error(e)
             self.logger.error('   %s cannot calc PSNR' % (name))
-            return
+            raise
 
     def getDataByTrace(self):
         self.logger.info("%s binfile get training set.." % self.root)
-
         for poc, img in self.poc_dic.items():
             basename = '{}_POC{}'.format(self.basename, poc)
-            tmp_pic_buff = {}
-            for key, value in self.condition_dic.items():
-                if value:
-                    y, cb, cr = self.imgUnpack(os.path.join(self.root, PictureFormat.INDEX_DIC[key], str(poc)+'.bin'))
-                    tmp_pic_buff[key] = {'Y':y, 'Cb':cb, 'Cr':cr}
-                    np.savez_compressed(os.path.join(self.Datasetpath, PictureFormat.INDEX_DIC[key], basename),
-                                        Y=y, Cb=cb, Cr=cr)
-            if self.PRINT_PSNR:
-                self.PrintPSNR(basename, tmp_pic_buff)
-            del tmp_pic_buff
+            try:
+                tmp_pic_buff = {}
+                for key, value in self.condition_dic.items():
+                    if value:
+                        y, cb, cr = self.imgUnpack(os.path.join(self.root, PictureFormat.INDEX_DIC[key], str(poc)+'.bin'))
+                        tmp_pic_buff[key] = {'Y':y, 'Cb':cb, 'Cr':cr}
+                        np.savez_compressed(os.path.join(self.Datasetpath, PictureFormat.INDEX_DIC[key], basename),
+                                            Y=y, Cb=cb, Cr=cr)
+                if self.PRINT_PSNR:
+                    self.PrintPSNR(basename, tmp_pic_buff)
+                del tmp_pic_buff
 
-            blockInPOC = investPOCBlocks(self.investText, poc)
-            os.makedirs(os.path.join(self.Datasetpath, 'BLOCK', basename), exist_ok=True)
-            blockpath = os.path.join(self.Datasetpath, 'BLOCK', basename)
-            for key, value in blockInPOC.blockdic.items():
-                if value:
-                    np.save(os.path.join(blockpath, key), np.array(value, dtype=blockInPOC.block_type[key]))
-            # ppsparam = [*blockInPOC.ppsdic.items()]
-            np.savez(os.path.join(blockpath, 'PPSParam.npz'), **blockInPOC.ppsdic)
-
+                blockInPOC = investPOCBlocks(self.investText, poc)
+                os.makedirs(os.path.join(self.Datasetpath, 'BLOCK', basename), exist_ok=True)
+                blockpath = os.path.join(self.Datasetpath, 'BLOCK', basename)
+                for key, value in blockInPOC.blockdic.items():
+                    if value:
+                        np.save(os.path.join(blockpath, key), np.array(value, dtype=blockInPOC.block_type[key]))
+                # ppsparam = [*blockInPOC.ppsdic.items()]
+                np.savez(os.path.join(blockpath, 'PPSParam.npz'), **blockInPOC.ppsdic)
+            except Exception as e:
+                self.logger.error("NAME : <{}>, {}".format(basename, e))
+                raise
 
     def getPSNR(self, org, control):
         if self.depth == 10:
