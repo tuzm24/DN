@@ -118,4 +118,12 @@ class BlockType:
 ChromaScale = 2
 
 
+class PPSType:
+    QP = 'QP'
+    SliceType = 'SliceType'
+    LayerID = 'LayerID'
+    TemporalID = 'TemporalID'
+    L0 = 'L0'
+    L1 = 'L1'
+
 

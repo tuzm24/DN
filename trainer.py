@@ -39,9 +39,7 @@ class Trainer():
         timer_data, timer_model = utility.timer(), utility.timer()
         # TEMP
         self.loader_train.dataset.set_scale(0)
-        for batch, (lr, hr, ext, _) in enumerate(self.loader_train):
-            if not (len(ext.shape)==1 and torch.isnan(ext[0])):
-                lr[0] = torch.cat((lr[0], ext), axis=1)
+        for batch, (lr, hr, _) in enumerate(self.loader_train):
             lr, hr = self.prepare(lr, hr)
             timer_data.hold()
             timer_model.tic()
@@ -87,9 +85,7 @@ class Trainer():
         for idx_data, d in enumerate(self.loader_test):
             for idx_scale, scale in enumerate(self.scale):
                 d.dataset.set_scale(idx_scale)
-                for lr, hr, ext, filename in tqdm(d, ncols=80):
-                    if not (len(ext.shape)==1 and torch.isnan(ext[0])):
-                        lr[0] = torch.cat((lr[0], ext), axis=1)
+                for lr, hr, filename in tqdm(d, ncols=80):
                     lr, hr = self.prepare(lr, hr)
                     sr = self.model(lr[0], idx_scale)
                     sr = utility.quantize(sr, self.args.rgb_range)

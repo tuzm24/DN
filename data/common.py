@@ -63,7 +63,6 @@ def np2Tensor2(args, rgb_range=1023):
         tensor.mul_(1 / rgb_range)
 
         return tensor
-
     return [_np2Tensor(a) for a in args]
 
 def augment(*args, hflip=True, rot=True):

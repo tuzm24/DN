@@ -326,14 +326,14 @@ class imgInfo(BuildData):
         else:
             MAX_VALUE = 255.0
         try:
-            mse = np.square(np.subtract(org, control)).mean()
+            mse = np.square(np.subtract(org, control).astype(np.int32)).mean()
             if mse == 0:
                 return 100
             return 10 * math.log10((MAX_VALUE * MAX_VALUE) / mse)
         except:
             msum = np.array([])
             for i in range(len(org)):
-                msum = np.concatenate((msum, np.square(np.subtract(org[i], control[i])).flatten()), axis=0)
+                msum = np.concatenate((msum, np.square(np.subtract(org[i], control[i])).astype(np.int32).flatten()), axis=0)
             return 10 * math.log10((MAX_VALUE * MAX_VALUE) / msum.mean())
 
 
@@ -545,6 +545,8 @@ class SplitManager:
         return
 
     def getRAS(self, name):
+        if self.rasreg.match(name) is None:
+            return None
         return int(self.rasreg.match(name).group('ras'))
 
     @staticmethod
@@ -570,7 +572,7 @@ if __name__ == '__main__':
     # os.chdir("../")
     print(os.getcwd())
     sp = SplitManager()
-    sp.getDataset('Training')
-    sp.getDataset('Validation')
+    # sp.getDataset('Training')
+    # sp.getDataset('Validation')
     sp.getDataset('Test')
 

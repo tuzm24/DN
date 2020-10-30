@@ -6,11 +6,9 @@ from data import common
 import imageio
 import numpy as np
 import random
-from help_func.CompArea import TuList
-from help_func.CompArea import TuDataIndex
 from help_func.help_python import myUtil
 from help_func.typedef import *
-
+import torch
 
 
 
@@ -36,8 +34,8 @@ class tracing_data(srdata.SRData):
         self.blocks_ext = '.npy'
         self.blocks = {}
         self._scanblockData()
-        self.idxes = [TuDataIndex.NAME_DIC[x] for x in self.args.tu_data_type]
         self.__getitem__(0)
+
 
     def _scanPPSData(self):
         named_ppsFile = []
@@ -96,106 +94,115 @@ class tracing_data(srdata.SRData):
         f = np.load(f)
         return np.stack((f['Y'], UpSamplingChroma(f['Cb']), UpSamplingChroma(f['Cr'])), axis=2)
 
+    @staticmethod
+    def read_npz_split_yuv(f):
+        f = np.load(f)
+        return [f['Y'][:,:,None], np.stack((f['Cb'], f['Cr']), axis=2)]
+
     def _load_file(self, idx):
         idx = self._get_index(idx)
         f_hr = self.images_hr[idx]
-        f_lr = self.images_lr[self.idx_scale][idx]
 
         filename, _ = os.path.splitext(os.path.basename(f_hr))
-        if self.args.ext == 'img' or self.benchmark:
-            hr = imageio.imread(f_hr)
-            lr = imageio.imread(f_lr)
-        elif self.args.ext.find('npz') >= 0:
+        lr = []
+        if self.args.sc:
+            hr = self.read_npz_split_yuv(f_hr)
+            for flr in self.images_lr:
+                lr.append(self.read_npz_split_yuv(flr[idx]))
+
+        else:
             hr = self.read_npz_file(f_hr)
-            lr = []
             for flr in self.images_lr:
                 lr.append(self.read_npz_file(flr[idx]))
-            # lr = self.read_npz_file(f_lr)
-        else:
-            assert 0
-
         return lr, hr, filename
 
     def get_patch(self, lr, hr):
-        def _get_patch(*args, patch_size=96, scale=2, multi=False, input_large=False):
-            ih, iw = args[0].shape[:2]
+        def _get_patch(*args, ih, iw, patch_size=96):
+            # ih, iw = args[0].shape[:2]
 
-            if not input_large:
-                p = scale if multi else 1
-                tp = p * patch_size
-                ip = tp // scale
-            else:
-                tp = patch_size
-                ip = patch_size
+
+            ip = patch_size
 
             ix = random.randrange(0, iw - ip + 1)
             iy = random.randrange(0, ih - ip + 1)
-
-            if not input_large:
-                tx, ty = scale * ix, scale * iy
+            if self.args.sc:
+                ix >>= 1
+                ix <<= 1
+                iy >>= 1
+                iy <<= 1
+                ret = [
+                    [a[iy//i:iy//i + ip//i, ix//i:ix//i + ip//i] for i, a in enumerate(args[0], 1)],
+                    [[a[iy//i:iy//i + ip//i, ix//i:ix//i + ip//i]  for i, a in enumerate(arg, 1)] for arg in args[1]]
+                ]
             else:
-                tx, ty = ix, iy
-
-            ret = [
-                args[0][ty:ty + tp, tx:tx + tp, :],
-                [a[iy:iy + ip, ix:ix + ip, :] for a in args[1]]
-            ]
-
-            return ret[0], ret[1], (ty, tp, tx, tp)
-
-        scale = self.scale[self.idx_scale]
-        tpy, tpx = hr.shape[:2]
-        imgy, imgx = hr.shape[:2]
+                ret = [
+                    args[0][iy:iy + ip, ix:ix + ip, :],
+                    [a[iy:iy + ip, ix:ix + ip, :] for a in args[1]]
+                ]
+            return ret[0], ret[1], (iy, ip, ix, ip)
+        if self.args.sc:
+            tpy, tpx = hr[0].shape[:2]
+        else:
+            tpy, tpx = hr.shape[:2]
         ty, tx = 0, 0
         if self.train:
             hr, lr, (ty, tpy, tx, tpx) = _get_patch(
-                hr, lr,
-                patch_size=self.args.patch_size,
-                scale=scale,
-                multi=(len(self.scale) > 1),
-                input_large=True
+                hr, lr, ih=tpy, iw=tpx,
+                patch_size=self.args.patch_size
             )
-            if self.args.no_augment: lr, hr = common.augment(lr, hr)
+        return lr, hr, (ty, tpy, tx, tpx)
 
-        return lr, hr, (ty, tpy, tx, tpx), (imgy, imgx)
-    # 0:xpos, 1:ypos, 2:width, 3:height
     def getBlock2d(self, y, dy, x, dx, idx, name, value_idx = 0):
-        block2d = np.zeros((dy, dx))
+        if self.args.sc:
+            block2d = np.full((dy//2, dx//2), np.nan)
+        else:
+            block2d = np.zeros((dy, dx))
         dy = y + dy
         dx = x + dx
-        block = np.load(self.blocks[name][idx])
-        filtered = block[:, ~np.any([(block[3] + block[1]) < y,
-                                     (block[0] + block[2]) < x,
-                                     block[1]>dy,
-                                     block[0]>dx
+        # 0:xpos, 1:ypos, 2:width, 3:height
+        block = np.load(self.blocks[name][idx]).T
+        filtered = block[:, ~np.any([(block[3] + block[1]) <= y,
+                                     (block[0] + block[2]) <= x,
+                                     block[1]>=dy,
+                                     block[0]>=dx
                                      ], axis=0)]
+        filtered[2, filtered[0]<x] = (filtered[0, filtered[0]<x] + filtered[2, filtered[0]<x]) - x
+        filtered[3, filtered[1]<y] = (filtered[1, filtered[1]<y] + filtered[3, filtered[1]<y]) - y
         filtered[0, filtered[0]<x] = x
         filtered[1, filtered[1]<y] = y
         filtered[2, (filtered[0] + filtered[2]) > dx] = dx - filtered[0, (filtered[0]+filtered[2] > dx)]
         filtered[3, (filtered[1] + filtered[3]) > dy] = dy - filtered[1, (filtered[1] + filtered[3]) > dy]
         filtered[0,:] -= x
         filtered[1,:] -= y
+        if self.args.sc:
+            filtered[0:4, :] //= 2
         for _xp, _yp, _w, _h, *values in filtered.T:
             block2d[_yp:_yp+_h, _xp:_xp+_w] = values[value_idx]
+
         return block2d
 
     def getBlockScalar(self, idx, name, value_idx=0):
-        block = np.load(self.blocks[name][idx])
-        return block.mean(axis=0)
+        block = np.load(self.blocks[name][idx]).T
+        return block[4+value_idx].mean(axis=0)
 
-    def getTuMask(self, ty, tpy, tx, tpx, h, w, filename):
-        tulist = TuList(np.load(
-            os.path.join(self.dir_lr, '{}/{}{}'.format(
-                self.args.tu_data, os.path.splitext(os.path.basename(filename))[0], self.ext[1]
-            ))
-        )['LUMA'])
-        return TuList.NormalizedbyMinMaxAll(tulist.getTuMaskFromIndexes(self.idxes, h, w)[:, ty:ty+tpy, tx:tx+tpx], self.idxes).astype('float32')
+    def getBlock2dFromScalar(self, value):
+        return np.full((self.args.patch_size,self.args.patch_size), value)
+
+    def np2tensor(self, args, rgb_range=1023):
+        def _np2Tensor(img):
+            np_transpose = np.ascontiguousarray(img.transpose((2, 0, 1)))
+            tensor = torch.from_numpy(np_transpose).float()
+            tensor.mul_(1 / rgb_range)
+            return tensor
+
+        if self.args.sc:
+            return [[_np2Tensor(a) for a in arg] for arg in args]
+        else:
+            return [_np2Tensor(a) for a in args]
 
 
     def __getitem__(self, idx):
         lr, hr, filename = self._load_file(idx)
-        lr, hr, pos, imgshape = self.get_patch(lr, hr)
-        self.getBlock2d(*pos, idx, BlockType.Luma_IntraMode)
-        # pair = common.set_channel(*pair, n_channels=self.args.n_colors)
-        # pair_t = common.np2Tensor(*pair, rgb_range=self.args.rgb_range)
-        return common.np2Tensor2(lr), common.np2Tensor2([hr])[0]
+        lr, hr, pos = self.get_patch(lr, hr)
+        # self.getBlock2d(*pos, idx, BlockType.Chroma_IntraMode)
+        return self.np2tensor(lr), self.np2tensor([hr])[0], filename

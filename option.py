@@ -21,7 +21,7 @@ parser.add_argument('--seed', type=int, default=1,
 # Data specifications
 parser.add_argument('--dir_data', type=str, default='./Dataset/TRAINING',
                     help='dataset directory')
-parser.add_argument('--dir_demo', type=str, default='./Dataset/VALIDATION',
+parser.add_argument('--dir_demo', type=str, default='./Dataset/TEST',
                     help='demo image directory')
 parser.add_argument('--data_train', type=str, default='tracing_data',
                     help='train dataset name')
@@ -52,7 +52,7 @@ parser.add_argument('--tu_data', type=str, default='BLOCK',
 parser.add_argument('--tu_data_type', type=str, default='QP')
 
 # Model specifications
-parser.add_argument('--model', default='rdn_down_up_qp',
+parser.add_argument('--model', default='dncnn',
                     help='model name')
 
 parser.add_argument('--act', type=str, default='relu',
@@ -89,6 +89,13 @@ parser.add_argument('--n_resgroups', type=int, default=10,
 parser.add_argument('--reduction', type=int, default=16,
                     help='number of feature maps reduction')
 
+# Option for Global and Spatial data based CNN (GSCNN)
+parser.add_argument('--fc', type=int, default=64,
+                    help='default number of filters. (Use in GSCNN)')
+parser.add_argument('--sc', type=int, default=0,
+                    help='Split Luma and Croma')
+
+
 # Training specifications
 parser.add_argument('--reset', action='store_true',
                     help='reset the training')
@@ -108,7 +115,7 @@ parser.add_argument('--gan_k', type=int, default=1,
                     help='k value for adversarial loss')
 
 # Optimization specifications
-parser.add_argument('--lr', type=float, default=1e-4,
+parser.add_argument('--lr', type=float, default=1e-3,
                     help='learning rate')
 parser.add_argument('--decay', type=str, default='200',
                     help='learning rate decay type')
