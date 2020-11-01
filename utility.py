@@ -136,7 +136,7 @@ class checkpoint():
             if not queue.empty():
                 filename, tensor = queue.get()
                 if filename is None: break
-                img = Image.frombytes('YCbCr', tensor.shape, tensor.numpy()).convert('RGB')
+                img = Image.frombytes('YCbCr', (tensor.shape[1], tensor.shape[0]), tensor.numpy()).convert('RGB')
                 # img = Image.fromarray(tensor.numpy(), 'RGB').convert('YCbCr')
                 img.save(filename)
                 # imageio.imwrite(filename, tensor.numpy())
