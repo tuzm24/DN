@@ -302,7 +302,7 @@ class imgInfo(BuildData):
                     if value:
                         y, cb, cr = self.imgUnpack(os.path.join(self.root, PictureFormat.INDEX_DIC[key], str(poc)+'.bin'))
                         tmp_pic_buff[key] = {'Y':y, 'Cb':cb, 'Cr':cr}
-                        np.savez_compressed(os.path.join(self.Datasetpath, PictureFormat.INDEX_DIC[key], basename),
+                        np.savez(os.path.join(self.Datasetpath, PictureFormat.INDEX_DIC[key], basename),
                                             Y=y, Cb=cb, Cr=cr)
                 if self.PRINT_PSNR:
                     self.PrintPSNR(basename, tmp_pic_buff)
@@ -572,7 +572,7 @@ if __name__ == '__main__':
     # os.chdir("../")
     print(os.getcwd())
     sp = SplitManager()
-    # sp.getDataset('Training')
+    sp.getDataset('Training')
     sp.getDataset('Validation')
-    # sp.getDataset('Test')
+    sp.getDataset('Test')
 

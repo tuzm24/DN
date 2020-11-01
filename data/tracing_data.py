@@ -10,6 +10,7 @@ from help_func.help_python import myUtil
 from help_func.typedef import *
 import torch
 
+import time
 
 
 class tracing_data(srdata.SRData):
@@ -87,12 +88,14 @@ class tracing_data(srdata.SRData):
         self.ext = ('.npz', '.npz')
 
 
+
+
     @staticmethod
-    def read_npz_file(f):
+    def read_npz_file(file):
         def UpSamplingChroma(UVPic):
             return UVPic.repeat(2, axis=0).repeat(2, axis=1)
-        f = np.load(f)
-        return np.stack((f['Y'], UpSamplingChroma(f['Cb']), UpSamplingChroma(f['Cr'])), axis=2)
+        with np.load(file) as f:
+            return np.stack((f['Y'], UpSamplingChroma(f['Cb']), UpSamplingChroma(f['Cr'])), axis=2)
 
     @staticmethod
     def read_npz_split_yuv(f):
@@ -151,6 +154,7 @@ class tracing_data(srdata.SRData):
                 patch_size=self.args.patch_size
             )
         return lr, hr, (ty, tpy, tx, tpx)
+
 
     def getBlock2d(self, y, dy, x, dx, idx, name, value_idx = 0):
         if self.args.sc:
