@@ -94,14 +94,14 @@ class Trainer():
                 for lr, hr, filename in tqdm(d, ncols=80):
                     lr, hr = self.prepare(lr, hr)
                     sr = self.model(lr[0], idx_scale)
-                    sr = utility.quantize(sr, self.args.rgb_range)
+                    sr = utility.quantize(sr, self.args.yuv_range)
 
                     save_list = [sr]
                     self.ckp.log[-1, idx_data, 0] += utility.calc_psnr(
-                        sr, hr, scale, self.args.rgb_range, dataset=d
+                        sr, hr, scale, self.args.yuv_range, dataset=d
                     )
                     self.ckp.log[-1, idx_data, 1] += utility.calc_psnr(
-                        lr[1], hr, scale, self.args.rgb_range, dataset=d
+                        lr[1], hr, scale, self.args.yuv_range, dataset=d
                     )
                     if self.args.save_gt:
                         save_list.extend([lr[0][:3], hr])

@@ -136,7 +136,8 @@ class checkpoint():
             if not queue.empty():
                 filename, tensor = queue.get()
                 if filename is None: break
-                img = Image.fromarray(tensor.numpy(), 'YCbCr')
+                img = Image.frombytes('YCbCr', tensor.shape, tensor.numpy()).convert('RGB')
+                # img = Image.fromarray(tensor.numpy(), 'RGB').convert('YCbCr')
                 img.save(filename)
                 # imageio.imwrite(filename, tensor.numpy())
 
@@ -146,7 +147,6 @@ class checkpoint():
             Process(target=self.bg_target, args=(self.queue,)) \
             for _ in range(self.n_processes)
         ]
-
         for p in self.process: p.start()
 
     def end_background(self):

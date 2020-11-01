@@ -37,6 +37,8 @@ parser.add_argument('--patch_size', type=int, default=192,
                     help='output patch size')
 parser.add_argument('--rgb_range', type=int, default=1023,
                     help='maximum value of RGB')
+parser.add_argument('--yuv_range', type=int, default=1023,
+                    help='maximum value of YUV')
 parser.add_argument('--n_colors', type=int, default=3,
                     help='number of color channels to use')
 parser.add_argument('--chop', action='store_true',
