@@ -65,7 +65,14 @@ class SRData(data.Dataset):
                     b = l.replace(self.apath, path_bin)
                     b = b.replace(self.ext[1], '.pt')
                     self.images_lr[i].append(b)
-                    self._check_and_load(args.ext, l, b, verbose=True) 
+                    self._check_and_load(args.ext, l, b, verbose=True)
+        if train:
+            n_patches = args.batch_size * args.test_every
+            n_images = len(args.data_train) * len(self.images_hr)
+            if n_images == 0:
+                self.repeat = 0
+            else:
+                self.repeat = max(n_patches // n_images, 1)
 
     # Below functions as used to prepare images
     def _scan(self):
@@ -107,8 +114,10 @@ class SRData(data.Dataset):
         return pair_t[0], pair_t[1], filename
 
     def __len__(self):
-
-        return len(self.images_hr)
+        if self.train:
+            return len(self.images_hr) * self.repeat
+        else:
+            return len(self.images_hr)
 
     def _get_index(self, idx):
         if self.train:
