@@ -517,7 +517,7 @@ class SplitManager:
 
 
     def getconditionduc(self, isTraining):
-        if(isTraining!=LearningIndex.TEST):
+        if(isTraining==LearningIndex.TRAINING):
             return {PictureFormat.ORIGINAL:1, PictureFormat.PREDICTION:0, PictureFormat.RECONSTRUCTION:0, PictureFormat.UNFILTEREDRECON:1}
         return {PictureFormat.ORIGINAL:1, PictureFormat.PREDICTION:1, PictureFormat.RECONSTRUCTION:1, PictureFormat.UNFILTEREDRECON:1}
 
@@ -573,6 +573,6 @@ if __name__ == '__main__':
     print(os.getcwd())
     sp = SplitManager()
     # sp.getDataset('Training')
-    # sp.getDataset('Validation')
-    sp.getDataset('Test')
+    sp.getDataset('Validation')
+    # sp.getDataset('Test')
 
