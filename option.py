@@ -27,7 +27,7 @@ parser.add_argument('--data_train', type=str, default='tracing_data',
                     help='train dataset name')
 parser.add_argument('--data_test', type=str, default='tracing_data',
                     help='test dataset name')
-parser.add_argument('--data_range', type=str, default='1-4000/801-812',
+parser.add_argument('--data_range', type=str, default='1-4000/801-808',
                     help='train/test data range')
 parser.add_argument('--ext', type=str, default='npz',
                     help='dataset file extension')
