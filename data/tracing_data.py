@@ -35,8 +35,6 @@ class tracing_data(srdata.SRData):
         self.blocks_ext = '.npy'
         self.blocks = {}
         self._scanblockData()
-        self.__getitem__(0)
-
 
     def _scanPPSData(self):
         named_ppsFile = []
