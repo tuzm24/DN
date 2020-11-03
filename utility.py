@@ -285,7 +285,10 @@ def getBetterPatch(patchsize, filtered, recon, orig):
     filtered_dist = (orig - filtered) ** 2
     recon_dist = (orig - recon) ** 2
     h, w = s[-2:]
-    pos_list = [(y, h - y if y + patchsize >= h else y + patchsize, x, w - x if x + patchsize >= x else x + patchsize) for y in range(0, h, patchsize) for x in range(0, w, patchsize)]
+    pos_list = [(y, h if y + patchsize >= h else y + patchsize, x, w if x + patchsize >= w else x + patchsize) for y in
+                range(0, h, patchsize) for x in range(0, w, patchsize)]
+
+
     for y, dy, x, dx in pos_list:
         if torch.mean(filtered_dist[...,y:dy, x:dx]) > torch.mean(recon_dist[..., y:dy, x: dx]):
             filtered[..., y:dy, x:dx] = recon[..., y:dy, x:dx]
