@@ -205,6 +205,17 @@ class tracing_data(srdata.SRData):
 
     def __getitem__(self, idx):
         lr, hr, filename = self._load_file(idx)
-        lr, hr, pos = self.get_patch(lr, hr)
+        if self.train and self.args.more_noisy:
+            mse = -1
+            tlr, thr, tpos = None, None, None
+            for _ in range(self.args.more_noisy):
+                _lr, _hr, _pos = self.get_patch(lr, hr)
+                temp =np.mean(np.square(_lr[0].astype('int32') - _hr[0]))
+                if temp>mse:
+                    mse = temp
+                    tlr, thr, tpos = _lr, _hr, _pos
+            lr, hr, pos = tlr, thr, tpos
+        else:
+            lr, hr, pos = self.get_patch(lr, hr)
         # self.getBlock2d(*pos, idx, BlockType.Chroma_IntraMode)
         return self.np2tensor(lr), self.np2tensor([hr])[0], filename

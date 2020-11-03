@@ -96,7 +96,10 @@ parser.add_argument('--fc', type=int, default=64,
                     help='default number of filters. (Use in GSCNN)')
 parser.add_argument('--sc', type=int, default=0,
                     help='Split Luma and Croma')
-
+parser.add_argument('--more_noisy', type=int, default=0,
+                    help='selects nosiy image from n of patchs')
+parser.add_argument('--better_patch', type=int, default=0,
+                    help='selects better psnr square patch in test')
 
 # Training specifications
 parser.add_argument('--reset', action='store_true',

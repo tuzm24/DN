@@ -24,6 +24,11 @@ class Trainer():
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
 
         self.error_last = 1e8
+        if len(self.loader_train) < 100:
+            self.print_array = [len(self.loader_train)]
+        else:
+            self.print_array = [x * len(self.loader_train) // 10 for x in range(1,11,1)]
+
 
     def train(self):
         self.loss.step()
@@ -36,14 +41,10 @@ class Trainer():
         self.loss.start_log()
         self.model.train()
 
+        self.loader_train.dataset.set_scale(0)
+
         timer_data, timer_model = utility.timer(), utility.timer()
         # TEMP
-        self.loader_train.dataset.set_scale(0)
-        if len(self.loader_train) < 100:
-            print_array = [len(self.loader_train)]
-        else:
-            print_array = [x * len(self.loader_train) // 10 for x in range(1,11,1)]
-
 
         for batch, (lr, hr, _) in enumerate(self.loader_train):
             lr, hr = self.prepare(lr, hr)
@@ -62,7 +63,7 @@ class Trainer():
 
             timer_model.hold()
 
-            if (batch + 1) in print_array:
+            if (batch + 1) in self.print_array:
                 self.ckp.write_log('[{}/{}]\t{}\t{:.1f}+{:.1f}s'.format(
                     (batch + 1) * self.args.batch_size,
                     len(self.loader_train.dataset),
@@ -95,6 +96,8 @@ class Trainer():
                     lr, hr = self.prepare(lr, hr)
                     sr = self.model(lr[0], idx_scale)
                     sr = utility.quantize(sr, self.args.yuv_range)
+                    if self.args.better_patch:
+                        utility.getBetterPatch(self.args.better_patch, sr, lr[1], hr)
 
                     save_list = [sr]
                     self.ckp.log[-1, idx_data, 0] += utility.calc_psnr(
