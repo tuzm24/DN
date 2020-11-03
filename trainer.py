@@ -97,7 +97,7 @@ class Trainer():
                     sr = self.model(lr[0], idx_scale)
                     sr = utility.quantize(sr, self.args.yuv_range)
                     if self.args.better_patch:
-                        utility.getBetterPatch(self.args.better_patch, sr, lr[1], hr)
+                        sr = utility.getBetterPatch(self.args.better_patch, sr, lr[1], hr)
 
                     save_list = [sr]
                     self.ckp.log[-1, idx_data, 0] += utility.calc_psnr(
