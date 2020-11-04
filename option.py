@@ -105,6 +105,11 @@ parser.add_argument('--image_pin_memory', type=int, default=0,
                     help='image load in memory always')
 
 
+
+# Option for DnCNN
+parser.add_argument('--dncnn_depth', type=int, default=17,
+                    help='depth of dncnn model depth')
+
 # Training specifications
 parser.add_argument('--reset', action='store_true',
                     help='reset the training')

@@ -5,11 +5,12 @@ def make_model(args, parent=False):
     return DnCNN(args)
 
 class DnCNN(nn.Module):
-    def __init__(self, args, depth=17, n_channels=64, image_channels=3):
+    def __init__(self, args, n_channels=64, image_channels=3):
         super(DnCNN, self).__init__()
         kernel_size = 3
         padding = 1
         layers = []
+        depth =args.dncnn_depth
 
         layers.append(nn.Conv2d(in_channels=image_channels, out_channels=n_channels, kernel_size=kernel_size, padding=padding, bias=True))
         layers.append(nn.ReLU(inplace=True))
