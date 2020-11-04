@@ -35,6 +35,7 @@ class tracing_data(srdata.SRData):
         self.blocks_ext = '.npy'
         self.blocks = {}
         self._scanblockData()
+        self.image_dic = {}
 
     def _scanPPSData(self):
         named_ppsFile = []
@@ -88,16 +89,24 @@ class tracing_data(srdata.SRData):
 
 
 
-    @staticmethod
-    def read_npz_file(file):
+    def read_npz_file(self, file):
         def UpSamplingChroma(UVPic):
             return UVPic.repeat(2, axis=0).repeat(2, axis=1)
-        with np.load(file) as f:
-            return np.stack((f['Y'], UpSamplingChroma(f['Cb']), UpSamplingChroma(f['Cr'])), axis=2)
+        if self.args.image_pin_memory:
+            if file not in self.image_dic:
+                self.image_dic[file] = np.load(file)
+            f = self.image_dic[file]
+        else:
+            f = np.load(file)
+        return np.stack((f['Y'], UpSamplingChroma(f['Cb']), UpSamplingChroma(f['Cr'])), axis=2)
 
-    @staticmethod
-    def read_npz_split_yuv(f):
-        f = np.load(f)
+    def read_npz_split_yuv(self, file):
+        if self.args.image_pin_memory:
+            if file not in self.image_dic:
+                self.image_dic[file] = np.load(file)
+            f = self.image_dic[file]
+        else:
+            f = np.load(file)
         return [f['Y'][:,:,None], np.stack((f['Cb'], f['Cr']), axis=2)]
 
     def _load_file(self, idx):

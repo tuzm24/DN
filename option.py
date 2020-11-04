@@ -46,6 +46,7 @@ parser.add_argument('--chop', action='store_true',
 parser.add_argument('--no_augment', action='store_true',
                     help='do not use data augmentation')
 
+
 parser.add_argument('--data_type', type=str, default=PictureFormat.INDEX_DIC[PictureFormat.UNFILTEREDRECON]+
                                                      '+'+PictureFormat.INDEX_DIC[PictureFormat.RECONSTRUCTION],
                     help='get data type')
@@ -100,6 +101,9 @@ parser.add_argument('--more_noisy', type=int, default=0,
                     help='selects nosiy image from n of patchs')
 parser.add_argument('--better_patch', type=int, default=0,
                     help='selects better psnr square patch in test')
+parser.add_argument('--image_pin_memory', type=int, default=0,
+                    help='image load in memory always')
+
 
 # Training specifications
 parser.add_argument('--reset', action='store_true',
